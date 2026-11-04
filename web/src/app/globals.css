@@ -13,3 +13,24 @@ article { padding: 26px; background: #fff; border: 1px solid #dce7ed; border-rad
 article h2 { margin-top: 0; }
 .note { color: #526978; font-size: 14px; margin-top: 36px; }
 @media (max-width: 720px) { .shell { padding: 48px 20px; } .cards { grid-template-columns: 1fr; } .status { flex-wrap: wrap; } }
+.auth-card { max-width: 420px; padding: 24px; border-radius: 14px; background: #fff; border: 1px solid #dce7ed; }
+.auth-card form, .auth-card label { display: grid; gap: 10px; }
+.auth-card label { margin: 16px 0; font-weight: 600; }
+input { width: 100%; border: 1px solid #a9c1ca; border-radius: 8px; padding: 11px; font: inherit; }
+.tabs { display: flex; gap: 8px; }
+.tabs button { background: #e7f0f1; color: #126a69; }
+.tabs .selected { background: #126a69; color: white; }
+.error { color: #b42318; }
+.dashboard { padding-top: 34px; }
+nav { display: flex; gap: 24px; align-items: center; border-bottom: 1px solid #dce7ed; padding-bottom: 20px; }
+nav a { color: #126a69; font-weight: 800; text-decoration: none; }
+nav button { margin-left: auto; background: #e7f0f1; color: #126a69; }
+.dashboard h1 { font-size: clamp(36px, 5vw, 60px); }
+.eyebrow { color: #526978; font-size: 13px; margin-top: 28px; }
+.notice { margin: 20px 0; padding: 15px; border-radius: 8px; background: #e8f5f2; }
+.report-list { display: grid; gap: 16px; margin-top: 30px; }
+.report-heading { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.report-heading small { color: #526978; }
+.inline-form { display: flex; gap: 10px; max-width: 560px; }
+.inline-form button { white-space: nowrap; }
+.secondary { margin-top: 10px; background: #fff2ed; color: #8b3727; }

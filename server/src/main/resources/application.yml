@@ -15,3 +15,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+demo:
+  doctor:
+    email: ${DEMO_DOCTOR_EMAIL:}
+    password: ${DEMO_DOCTOR_PASSWORD:}
