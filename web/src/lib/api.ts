@@ -46,7 +46,15 @@ export async function api<T>(path: string, method = "GET", body?: unknown): Prom
     cache: "no-store",
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!response.ok) throw new ApiError(response.status, `请求失败（HTTP ${response.status}）`);
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    const detail = typeof payload?.message === "string" ? payload.message : null;
+    const fallback = response.status === 400 ? "输入未通过校验，请核对测量值和单位。"
+      : response.status === 401 ? "登录已过期，请重新登录。"
+      : response.status === 403 ? "当前账号无权执行此操作。"
+      : `请求失败（HTTP ${response.status}）`;
+    throw new ApiError(response.status, detail ?? fallback);
+  }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }

@@ -68,7 +68,8 @@ public class IndicatorService {
             BigDecimal max = code.endsWith("_bp") ? new BigDecimal("350") : code.equals("hba1c") ? new BigDecimal("25")
                 : new BigDecimal("100");
             if (standard.compareTo(min) < 0 || standard.compareTo(max) > 0)
-                throw bad("数值超出录入范围，请核对单位与原始报告");
+                throw bad(label(code) + "超出录入范围（" + min.stripTrailingZeros().toPlainString()
+                    + "–" + max.stripTrailingZeros().toPlainString() + " " + standardUnit + "），请核对单位与原始报告");
             normalized.put(code, standard);
             values.add(new NormalizedValue(code, raw, input.unit(), standard.setScale(4, RoundingMode.HALF_UP), standardUnit, CONVERSION_VERSION));
         }
@@ -103,6 +104,20 @@ public class IndicatorService {
         BigDecimal divisor = code.equals("blood_glucose") ? new BigDecimal("18.0182")
             : code.equals("triglycerides") ? new BigDecimal("88.57") : new BigDecimal("38.67");
         return raw.divide(divisor, 8, RoundingMode.HALF_UP);
+    }
+
+    private String label(String code) {
+        return switch (code) {
+            case "systolic_bp" -> "收缩压";
+            case "diastolic_bp" -> "舒张压";
+            case "blood_glucose" -> "血糖";
+            case "hba1c" -> "糖化血红蛋白";
+            case "total_cholesterol" -> "总胆固醇";
+            case "ldl_cholesterol" -> "LDL 胆固醇";
+            case "hdl_cholesterol" -> "HDL 胆固醇";
+            case "triglycerides" -> "甘油三酯";
+            default -> "指标";
+        };
     }
 
     private ResponseStatusException bad(String message) { return new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }

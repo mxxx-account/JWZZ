@@ -61,3 +61,7 @@ select { width: 100%; border: 1px solid #a9c1ca; border-radius: 8px; padding: 11
 .rule-result { margin: 14px 0; padding: 14px; background: #f4faf8; border-left: 3px solid #126a69; }
 .rule-result p { margin: 5px 0; }
 .report-content .note { margin: 8px 0; }
+.input-hint { margin: 18px 0 0; color: #526978; font-size: 14px; }
+.field-error { color: #b42318; font-size: 13px; line-height: 1.5; font-weight: 500; }
+input[aria-invalid="true"] { border-color: #b42318; background: #fff8f6; }
+.error-notice { margin: 20px 0; padding: 15px; border-radius: 8px; background: #fff0ed; border: 1px solid #f5c5bd; color: #8b2419; }

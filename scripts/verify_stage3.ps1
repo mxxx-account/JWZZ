@@ -45,6 +45,12 @@ AssertStatus $doctorRead 403 'doctor cannot read patient indicators'
 $badUnit = @{category='GLUCOSE';measuredAt=$time;context='FASTING_PLASMA';ageYears=22;pregnant=$false;values=@{blood_glucose=@{value=100;unit='watts'}}} | ConvertTo-Json -Depth 5
 $rejected = Invoke-WebRequest "$base/api/indicators" -Method Post -WebSession $session -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=(Token $session)} -Body $badUnit -SkipHttpErrorCheck
 AssertStatus $rejected 400 'invalid unit rejected'
+$invalidBp = @{category='BP';measuredAt=$time;context='HOME';ageYears=22;pregnant=$false;values=@{systolic_bp=@{value=7.0001;unit='mmHg'};diastolic_bp=@{value=15.0001;unit='mmHg'}}} | ConvertTo-Json -Depth 5
+$invalidBpResponse = Invoke-WebRequest "$base/api/indicators" -Method Post -WebSession $session -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=(Token $session)} -Body $invalidBp -SkipHttpErrorCheck
+AssertStatus $invalidBpResponse 400 'screenshot blood pressure rejected'
+$invalidMessage = ($invalidBpResponse.Content | ConvertFrom-Json).message
+if ($invalidMessage -notmatch '收缩压|舒张压') { throw 'Invalid BP response did not identify the field' }
+Write-Output 'PASS invalid BP response explains the field'
 $capillary = @{category='GLUCOSE';measuredAt=$time;context='CAPILLARY';ageYears=22;pregnant=$false;values=@{blood_glucose=@{value=7.0;unit='mmol/L'}}} | ConvertTo-Json -Depth 5
 $capillarySaved = Invoke-WebRequest "$base/api/indicators" -Method Post -WebSession $session -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=(Token $session)} -Body $capillary -SkipHttpErrorCheck
 AssertStatus $capillarySaved 201 'capillary glucose saved'
