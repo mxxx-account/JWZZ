@@ -5,6 +5,7 @@
 .maven-repository/
 **/.env
 **/.env.local
+server/.env.local.ps1
 nhanes_dkd_dataset.csv
 __pycache__/
 *.py[cod]

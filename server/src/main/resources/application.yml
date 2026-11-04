@@ -4,7 +4,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/jwzz?useUnicode=true&characterEncoding=utf8}
     username: ${DB_USER:jwzz}
-    password: ${DB_PASSWORD:jwzz_dev_only}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate
