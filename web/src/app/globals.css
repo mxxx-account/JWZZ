@@ -1,0 +1,15 @@
+:root { color-scheme: light; font-family: Arial, "Microsoft YaHei", sans-serif; background: #f5f8fb; color: #173044; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.shell { max-width: 1080px; margin: 0 auto; padding: 80px 28px; }
+.badge { display: inline-block; padding: 7px 12px; border-radius: 100px; background: #dff2ef; color: #0d665f; font-size: 13px; font-weight: 700; }
+h1 { font-size: clamp(46px, 7vw, 78px); letter-spacing: -2px; margin: 25px 0 8px; }
+.lead { font-size: 24px; font-weight: 600; }
+p { line-height: 1.7; }
+.status { display: flex; gap: 14px; align-items: center; margin: 32px 0; }
+button { padding: 12px 20px; border: 0; border-radius: 9px; background: #126a69; color: #fff; font: inherit; cursor: pointer; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 50px; }
+article { padding: 26px; background: #fff; border: 1px solid #dce7ed; border-radius: 14px; }
+article h2 { margin-top: 0; }
+.note { color: #526978; font-size: 14px; margin-top: 36px; }
+@media (max-width: 720px) { .shell { padding: 48px 20px; } .cards { grid-template-columns: 1fr; } .status { flex-wrap: wrap; } }

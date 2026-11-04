@@ -1,0 +1,16 @@
+.venv/
+**/node_modules/
+**/.next/
+**/target/
+.maven-repository/
+**/.env
+**/.env.local
+nhanes_dkd_dataset.csv
+__pycache__/
+*.py[cod]
+reports/*.png
+reports/*.csv
+reports/*.json
+models/*.joblib
+models/*.json
+

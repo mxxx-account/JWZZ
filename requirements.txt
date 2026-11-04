@@ -1,0 +1,11 @@
+pandas>=2.2,<3
+numpy>=1.26,<3
+scikit-learn>=1.5,<2
+xgboost>=2.1,<4
+lightgbm>=4.5,<5
+shap>=0.46,<1
+matplotlib>=3.9,<4
+seaborn>=0.13,<1
+joblib>=1.4,<2
+fastapi>=0.115,<1
+uvicorn>=0.30,<1
