@@ -58,4 +58,10 @@ class IndicatorServiceTest {
         assertEquals("TG_REFERENCE", rules.evaluate(entry).get(0).ruleCode());
         assertTrue(rules.evaluate(entry).get(0).label().contains("不低于"));
     }
+
+    @Test void trendRequiresCompatibleCodeAndContext() {
+        assertDoesNotThrow(() -> service.validateTrendFilter("blood_glucose", "FASTING_PLASMA"));
+        assertThrows(ResponseStatusException.class, () -> service.validateTrendFilter("blood_glucose", "HOME"));
+        assertThrows(ResponseStatusException.class, () -> service.validateTrendFilter("unknown", "HOME"));
+    }
 }

@@ -21,7 +21,7 @@ function localDateTime() {
   return `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}T${two(date.getHours())}:${two(date.getMinutes())}`;
 }
 
-export function IndicatorPanel() {
+export function IndicatorPanel({ onSaved }: { onSaved: () => void }) {
   const [category, setCategory] = useState<Category>("BP");
   const [context, setContext] = useState("HOME");
   const [measuredAt, setMeasuredAt] = useState(localDateTime);
@@ -45,6 +45,7 @@ export function IndicatorPanel() {
       });
       setResult(created);
       setMessage("指标已保存。原始值和换算后的标准值均已记录。");
+      onSaved();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "保存失败，请核对输入。");
     } finally { setBusy(false); }

@@ -10,7 +10,7 @@
 
 此前的 `src/`、`backend/`、`desktop/`、`models/`、`reports/` 暂作 DKD 模型与 Electron 原型研究资料保留。原始 CSV 不进入 Git 仓库。现有模型尚未接入新版用户评估流程。
 
-开发说明见 [docs/development.md](docs/development.md)，任务清单见 [docs/implementation-plan.md](docs/implementation-plan.md)，输入设计见 [docs/indicator-dictionary.md](docs/indicator-dictionary.md)。
+开发说明见 [docs/development.md](docs/development.md)，任务清单见 [docs/implementation-plan.md](docs/implementation-plan.md)，输入设计见 [docs/indicator-dictionary.md](docs/indicator-dictionary.md)。当前阶段的报告与趋势验收见 [docs/stage4-acceptance.md](docs/stage4-acceptance.md)。规则仍是待临床审核的研发预览。
 
 ## 旧模型原型
 

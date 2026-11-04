@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, type CurrentUser, type Report } from "@/lib/api";
+import { ReportContent } from "../report-content";
 
 export default function DoctorPage() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export default function DoctorPage() {
     {reports.length === 0 && <p className="notice">目前没有用户授权的报告。</p>}
     <div className="report-list">{reports.map(report => <article key={report.id}>
       <div className="report-heading"><h2>{report.content.title ?? `报告 #${report.id}`}</h2><small>用户编号 #{report.ownerId} · {new Date(report.createdAt).toLocaleString("zh-CN")}</small></div>
-      <p>{report.content.message}</p>
+      <ReportContent report={report} />
       <p className="note">这份报告会在用户撤销授权后从列表中消失。</p>
     </article>)}</div>
   </main>;

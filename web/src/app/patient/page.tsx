@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, type CurrentUser, type Grant, type Report } from "@/lib/api";
 import { IndicatorPanel } from "./indicator-panel";
+import { EntryHistory } from "./entry-history";
+import { TrendPanel } from "./trend-panel";
+import { ReportContent } from "../report-content";
 
 export default function PatientPage() {
   const router = useRouter();
@@ -14,6 +17,7 @@ export default function PatientPage() {
   const [doctorEmail, setDoctorEmail] = useState("doctor@jwzz.local");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [indicatorRefreshKey, setIndicatorRefreshKey] = useState(0);
 
   async function refresh() {
     const nextReports = await api<Report[]>("/api/reports");
@@ -41,14 +45,17 @@ export default function PatientPage() {
     <nav><Link href="/">见微知著</Link><span>用户工作台</span><button onClick={async () => { await api<void>("/api/auth/logout", "POST"); router.push("/"); }}>退出登录</button></nav>
     <p className="eyebrow">已登录：{user?.email ?? "加载中…"}</p>
     <h1>指标与报告工作台</h1>
-    <IndicatorPanel />
-    <p className="lead">这一阶段用虚构报告验收谁能查看数据。实际体检报告将在后续阶段实现。</p>
-    <button disabled={busy} onClick={() => action(() => api<{id:number}>("/api/dev/reports", "POST"))}>创建一份虚构演示报告</button>
+    <IndicatorPanel onSaved={() => setIndicatorRefreshKey(value => value + 1)} />
+    <EntryHistory refreshKey={indicatorRefreshKey} onGenerated={refresh} />
+    <TrendPanel refreshKey={indicatorRefreshKey} />
+    <h2>我的报告与授权</h2>
+    <p className="lead">报告固定生成时的指标和规则版本。只有你明确授权后，医生演示账号才能查看。</p>
+    <button className="secondary" disabled={busy} onClick={() => action(() => api<{id:number}>("/api/dev/reports", "POST"))}>创建旧版虚构权限演示报告</button>
     {message && <p role="status" className="notice">{message}</p>}
-    {reports.length === 0 && <p className="notice">还没有报告。点击上方按钮创建演示报告。</p>}
+    {reports.length === 0 && <p className="notice">还没有报告。请先录入指标，再在“最近录入”中生成报告。</p>}
     <div className="report-list">{reports.map(report => <article key={report.id}>
       <div className="report-heading"><h2>{report.content.title ?? `报告 #${report.id}`}</h2><small>#{report.id} · {new Date(report.createdAt).toLocaleString("zh-CN")}</small></div>
-      <p>{report.content.message}</p>
+      <ReportContent report={report} />
       <p className="note">当前授权：{grants[report.id]?.length ? grants[report.id].map(grant => grant.doctorEmail).join("、") : "无"}</p>
       <div className="inline-form"><input aria-label="医生邮箱" type="email" value={doctorEmail} onChange={event => setDoctorEmail(event.target.value)} /><button disabled={busy} onClick={() => action(() => api<Grant>(`/api/reports/${report.id}/grants`, "POST", {doctorEmail}))}>授权医生查看</button></div>
       {grants[report.id]?.map(grant => <button className="secondary" key={grant.doctorId} disabled={busy} onClick={() => action(() => api<void>(`/api/reports/${report.id}/grants/${grant.doctorId}`, "DELETE"))}>撤销 {grant.doctorEmail} 的权限</button>)}

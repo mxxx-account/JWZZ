@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/indicators/**").hasRole("USER")
                 .requestMatchers("/api/indicators").hasRole("USER")
                 .requestMatchers("/api/doctor/**").hasRole("DOCTOR")
+                .requestMatchers(HttpMethod.POST, "/api/reports").hasRole("USER")
                 .requestMatchers("/api/auth/**", "/api/reports/**").authenticated()
                 .anyRequest().denyAll())
             .formLogin(login -> login.loginProcessingUrl("/api/auth/login")

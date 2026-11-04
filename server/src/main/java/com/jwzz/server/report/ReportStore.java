@@ -5,6 +5,7 @@ import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
@@ -19,6 +20,22 @@ public class ReportStore {
     public Optional<Report> findById(long id) {
         return jdbc.query("SELECT id, user_id, rule_set_version, report_json, created_at FROM assessment_report WHERE id=?",
             (rs, row) -> new Report(rs.getLong("id"), rs.getLong("user_id"), rs.getString("rule_set_version"), rs.getString("report_json"), rs.getTimestamp("created_at").toLocalDateTime()), id).stream().findFirst();
+    }
+
+    public Optional<Report> findByUserKey(long userId, String idempotencyKey) {
+        return jdbc.query("SELECT id, user_id, rule_set_version, report_json, created_at FROM assessment_report WHERE user_id=? AND idempotency_key=?",
+            (rs, row) -> new Report(rs.getLong("id"), rs.getLong("user_id"), rs.getString("rule_set_version"), rs.getString("report_json"), rs.getTimestamp("created_at").toLocalDateTime()),
+            userId, idempotencyKey).stream().findFirst();
+    }
+
+    public Report saveGenerated(long userId, String entryId, String ruleVersion, String content) {
+        try {
+            jdbc.update("INSERT INTO assessment_report (user_id, idempotency_key, rule_set_version, report_json) VALUES (?, ?, ?, ?)",
+                userId, entryId, ruleVersion, content);
+        } catch (DuplicateKeyException ignored) {
+            // The unique (user_id, idempotency_key) index wins concurrent retries.
+        }
+        return findByUserKey(userId, entryId).orElseThrow();
     }
 
     public List<Report> ownedBy(long userId) {

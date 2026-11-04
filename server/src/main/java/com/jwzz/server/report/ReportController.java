@@ -23,12 +23,14 @@ public class ReportController {
     public record ReportView(long id, long ownerId, String ruleVersion, JsonNode content, LocalDateTime createdAt) {}
     public record GrantRequest(String doctorEmail) {}
     public record GrantView(long doctorId, String doctorEmail) {}
+    public record GenerateRequest(String entryId) {}
 
     private final UserStore users;
     private final ReportStore reports;
     private final ObjectMapper mapper;
-    public ReportController(UserStore users, ReportStore reports, ObjectMapper mapper) {
-        this.users = users; this.reports = reports; this.mapper = mapper;
+    private final ReportGenerationService generation;
+    public ReportController(UserStore users, ReportStore reports, ObjectMapper mapper, ReportGenerationService generation) {
+        this.users = users; this.reports = reports; this.mapper = mapper; this.generation = generation;
     }
 
     @GetMapping("/reports")
@@ -36,6 +38,12 @@ public class ReportController {
         UserStore.User user = current(principal);
         if (!user.role().equals("USER")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         return reports.ownedBy(user.id()).stream().map(this::view).toList();
+    }
+
+    @PostMapping("/reports")
+    public ReportView generate(@RequestBody GenerateRequest request, Principal principal) {
+        if (request == null || request.entryId() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        return view(generation.generate(current(principal).id(), request.entryId()));
     }
 
     @GetMapping("/doctor/reports")

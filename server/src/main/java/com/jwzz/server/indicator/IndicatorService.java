@@ -77,6 +77,18 @@ public class IndicatorService {
         return new PreparedEntry(UUID.randomUUID().toString(), request, List.copyOf(values));
     }
 
+    public void validateTrendFilter(String code, String context) {
+        String category = CATEGORY.get(code);
+        if (category == null || context == null) throw bad("未知指标或测量条件");
+        Set<String> allowed = switch (category) {
+            case "BP" -> BP_CONTEXT;
+            case "GLUCOSE" -> GLUCOSE_CONTEXT;
+            case "LIPID" -> LIPID_CONTEXT;
+            default -> throw bad("未知指标分类");
+        };
+        if (!allowed.contains(context)) throw bad("测量条件不适用于当前指标");
+    }
+
     private BigDecimal convert(String code, BigDecimal raw, String unit) {
         if (code.endsWith("_bp")) {
             if (!unit.equals("mmHg")) throw bad("血压单位只能为 mmHg");

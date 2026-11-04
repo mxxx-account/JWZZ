@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,5 +44,11 @@ public class IndicatorController {
     @GetMapping
     public List<IndicatorStore.StoredValue> list(Principal principal) {
         return store.latest(users.findByEmail(principal.getName()).orElseThrow().id());
+    }
+
+    @GetMapping("/trends")
+    public List<IndicatorStore.StoredValue> trend(@RequestParam String code, @RequestParam String context, Principal principal) {
+        service.validateTrendFilter(code, context);
+        return store.trend(users.findByEmail(principal.getName()).orElseThrow().id(), code, context);
     }
 }
