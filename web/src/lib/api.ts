@@ -7,6 +7,9 @@ export type Report = {
   createdAt: string;
 };
 export type Grant = { doctorId: number; doctorEmail: string };
+export type NormalizedValue = { code: string; rawValue: number; rawUnit: string; value: number; unit: string; conversionVersion: string };
+export type DraftInterpretation = { ruleCode: string; ruleVersion: string; reviewStatus: string; label: string; explanation: string; applicability: string; sourceTitle: string; sourceUrl: string };
+export type IndicatorEntryResponse = { entryId: string; values: NormalizedValue[]; rulesStatus: string; draftInterpretations: DraftInterpretation[] };
 
 const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 

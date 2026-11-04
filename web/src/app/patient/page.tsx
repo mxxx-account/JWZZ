@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, type CurrentUser, type Grant, type Report } from "@/lib/api";
+import { IndicatorPanel } from "./indicator-panel";
 
 export default function PatientPage() {
   const router = useRouter();
@@ -39,7 +40,8 @@ export default function PatientPage() {
   return <main className="shell dashboard">
     <nav><Link href="/">见微知著</Link><span>用户工作台</span><button onClick={async () => { await api<void>("/api/auth/logout", "POST"); router.push("/"); }}>退出登录</button></nav>
     <p className="eyebrow">已登录：{user?.email ?? "加载中…"}</p>
-    <h1>我的报告与授权</h1>
+    <h1>指标与报告工作台</h1>
+    <IndicatorPanel />
     <p className="lead">这一阶段用虚构报告验收谁能查看数据。实际体检报告将在后续阶段实现。</p>
     <button disabled={busy} onClick={() => action(() => api<{id:number}>("/api/dev/reports", "POST"))}>创建一份虚构演示报告</button>
     {message && <p role="status" className="notice">{message}</p>}

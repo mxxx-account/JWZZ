@@ -13,8 +13,8 @@
 2. 把 `server/env.example.ps1` 复制为 `server/.env.local.ps1`，填入项目用户密码及仅供本地演示的医生密码。该文件被 Git 忽略，不要把 root 密码放进项目配置。
 3. 在 PowerShell 中执行 `cd server`、`. .\.env.local.ps1`、`mvn spring-boot:run`。Spring Boot 启动时由 Flyway 自动运行数据库迁移。
 4. 在另一个终端执行 `cd web`、`npm install`、`npm run dev`。
-5. 打开 `http://localhost:3000`，点击“检查后端连接”；服务接口是 `http://localhost:8080/api/health`。阶段 2 的体验步骤见 [stage2-acceptance.md](stage2-acceptance.md)。
+5. 打开 `http://localhost:3000`，点击“检查后端连接”；服务接口是 `http://localhost:8080/api/health`。阶段 2 的体验步骤见 [stage2-acceptance.md](stage2-acceptance.md)，阶段 3 的指标录入体验见 [stage3-acceptance.md](stage3-acceptance.md)。
 
 当前机器已找到 MySQL Server 8.0.46，服务名为 `MySQL80`。`jwzz` 数据库和本机专用账号已创建，Flyway V1 已执行成功。Redis 尚未启用实际业务，可在需要缓存功能时再配置。
 
-阶段 2 已加入本地注册、会话、用户/医生角色和报告授权。正式的指标录入及判断规则尚未加入，当前演示报告不包含真实体检数据。
+阶段 3 已加入指标录入、换算和研发规则预览。尚未经过临床审核，不能作为诊断或治疗依据；正式评估报告与趋势图仍在后续阶段。当前阶段 2 的演示报告仍只含虚构数据，不会自动引用阶段 3 指标。
