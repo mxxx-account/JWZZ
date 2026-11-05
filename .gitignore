@@ -1,6 +1,7 @@
 .venv/
 **/node_modules/
 **/.next/
+*.tsbuildinfo
 **/target/
 .maven-repository/
 **/.env

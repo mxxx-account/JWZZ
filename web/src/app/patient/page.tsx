@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, type Consultation, type CurrentUser, type Grant, type Report } from "@/lib/api";
+import { api, type Consultation, type CurrentUser, type Doctor, type Grant, type Report } from "@/lib/api";
 import { IndicatorPanel } from "./indicator-panel";
 import { EntryHistory } from "./entry-history";
 import { TrendPanel } from "./trend-panel";
 import { ReportContent } from "../report-content";
+import { DoctorChooser } from "./doctor-chooser";
 
 export default function PatientPage() {
   const router = useRouter();
@@ -15,8 +16,9 @@ export default function PatientPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [grants, setGrants] = useState<Record<number, Grant[]>>({});
   const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [selectedDoctors, setSelectedDoctors] = useState<Record<number, number>>({});
   const [questions, setQuestions] = useState<Record<number, string>>({});
-  const [doctorEmail, setDoctorEmail] = useState("doctor@jwzz.local");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [indicatorRefreshKey, setIndicatorRefreshKey] = useState(0);
@@ -26,6 +28,8 @@ export default function PatientPage() {
     setReports(nextReports);
     const pairs = await Promise.all(nextReports.map(async report => [report.id, await api<Grant[]>(`/api/reports/${report.id}/grants`)] as const));
     setGrants(Object.fromEntries(pairs));
+    try { setDoctors(await api<Doctor[]>("/api/doctors")); }
+    catch { /* Existing reports remain usable if the directory is unavailable. */ }
     try { setConsultations(await api<Consultation[]>("/api/consultations")); }
     catch { /* Report and grant state must still refresh if consultations are temporarily unavailable. */ }
   }
@@ -38,6 +42,11 @@ export default function PatientPage() {
     }).catch(() => router.replace("/"));
   }, [router]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => api<Doctor[]>("/api/doctors").then(setDoctors).catch(() => undefined), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   async function action(run: () => Promise<unknown>, successMessage = "操作成功。") {
     setBusy(true); setMessage("");
     try { await run(); await refresh(); setMessage(successMessage); }
@@ -46,14 +55,20 @@ export default function PatientPage() {
   }
 
   async function askDoctor(reportId: number) {
-    await action(async () => {
-      await api<Consultation>("/api/consultations", "POST", { reportId, question: questions[reportId]?.trim() ?? "" });
-      setQuestions(previous => ({ ...previous, [reportId]: "" }));
-    }, "演示咨询请求已提交，等待医生回复。请勿用于紧急或真实医疗咨询。");
+    const doctorId = selectedDoctors[reportId] ?? grants[reportId]?.[0]?.doctorId;
+    if (!doctorId || !grants[reportId]?.some(grant => grant.doctorId === doctorId)) {
+      setMessage("请先选择并授权要咨询的医生。"); return;
+    }
+    setBusy(true); setMessage("");
+    try {
+      const created = await api<Consultation>("/api/consultations", "POST", { reportId, doctorId, question: questions[reportId]?.trim() ?? "" });
+      router.push(`/patient/messages?conversation=${created.id}`);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "咨询提交失败。"); }
+    finally { setBusy(false); }
   }
 
   return <main className="shell dashboard">
-    <nav><Link href="/">见微知著</Link><span>用户工作台</span><button onClick={async () => { await api<void>("/api/auth/logout", "POST"); router.push("/"); }}>退出登录</button></nav>
+    <nav><Link href="/">见微知著</Link><span>用户工作台</span><Link href="/patient/messages">消息</Link><button onClick={async () => { await api<void>("/api/auth/logout", "POST"); router.push("/"); }}>退出登录</button></nav>
     <p className="eyebrow">已登录：{user?.email ?? "加载中…"}</p>
     <h1>指标与报告工作台</h1>
     <IndicatorPanel onSaved={() => setIndicatorRefreshKey(value => value + 1)} />
@@ -67,14 +82,14 @@ export default function PatientPage() {
       <div className="report-list">{reports.map(report => <article key={report.id}>
       <div className="report-heading"><h2>{report.content.title ?? `报告 #${report.id}`}</h2><small>#{report.id} · {new Date(report.createdAt).toLocaleString("zh-CN")}</small></div>
       <ReportContent report={report} />
-      <p className="note">当前授权：{grants[report.id]?.length ? grants[report.id].map(grant => grant.doctorEmail).join("、") : "无"}</p>
-      <div className="inline-form"><input aria-label="医生邮箱" type="email" value={doctorEmail} onChange={event => setDoctorEmail(event.target.value)} /><button disabled={busy} onClick={() => action(() => api<Grant>(`/api/reports/${report.id}/grants`, "POST", {doctorEmail}))}>授权医生查看</button></div>
+      <p className="note">当前授权：{grants[report.id]?.length ? grants[report.id].map(grant => doctors.find(doctor => doctor.id === grant.doctorId)?.displayName ?? grant.doctorEmail).join("、") : "无"}</p>
+      <DoctorChooser report={report} allReports={reports} doctors={doctors} grants={grants[report.id] ?? []} selectedId={selectedDoctors[report.id] ?? null} busy={busy} onSelect={doctorId => setSelectedDoctors(previous => ({...previous, [report.id]: doctorId}))} onGrant={doctor => action(() => api<Grant>(`/api/reports/${report.id}/grants`, "POST", {doctorEmail: doctor.email}), "授权成功，可以向这位医生提交咨询。")}/>
       {grants[report.id]?.map(grant => <button className="secondary" key={grant.doctorId} disabled={busy} onClick={() => action(() => api<void>(`/api/reports/${report.id}/grants/${grant.doctorId}`, "DELETE"), "撤销成功。")}>撤销 {grant.doctorEmail} 的权限</button>)}
       <div className="consultation-area">
-        <h3>演示咨询</h3><p className="note">仅演示异步消息流程，不是实时问诊或医疗建议。请勿填写身份信息或紧急病情。</p>
-        {Boolean(grants[report.id]?.length) && <div className="consultation-form"><textarea aria-label={`关于报告 ${report.id} 的问题`} maxLength={1000} minLength={10} placeholder="填写至少 10 个字的问题，例如：这份报告中的测量条件是什么意思？" value={questions[report.id] ?? ""} onChange={event => setQuestions(previous => ({ ...previous, [report.id]: event.target.value }))} /><button disabled={busy || (questions[report.id]?.trim().length ?? 0) < 10} onClick={() => askDoctor(report.id)}>提交演示咨询</button></div>}
+        <h3>向医生发起消息</h3><p className="note">仅演示异步消息，不是实时问诊。未填写时将发送“您好，请帮我看看我的指标报告！”。如有胸痛、胸闷等急症不适，请及时线下就医，不要等待聊天回复。</p>
+        {Boolean(grants[report.id]?.length) && <div className="consultation-form"><textarea aria-label={`关于报告 ${report.id} 的问题`} maxLength={1000} placeholder="可填写想咨询的问题；留空则发送默认问候语" value={questions[report.id] ?? ""} onChange={event => setQuestions(previous => ({ ...previous, [report.id]: event.target.value }))} /><button disabled={busy} onClick={() => askDoctor(report.id)}>提交咨询并打开消息</button></div>}
         {!grants[report.id]?.length && <p className="note">先授权医生查看这份报告，才能提交咨询请求。</p>}
-        {consultations.filter(item => item.reportId === report.id).map(item => <div className="consultation-item" key={item.id}><p><strong>咨询 #{item.id}</strong> · {item.status === "OPEN" ? "待接单" : item.status === "CLAIMED" ? "医生已接单" : "已回复"}</p><p>我的问题：{item.question}</p>{item.answer && <p>医生演示回复：{item.answer}</p>}</div>)}
+        {consultations.filter(item => item.reportId === report.id).map(item => <div className="consultation-item" key={item.id}><Link href={`/patient/messages?conversation=${item.id}`}>咨询 #{item.id} · {item.status === "OPEN" ? "待接单" : item.status === "CLAIMED" ? "医生已接单" : "查看消息"}</Link></div>)}
       </div>
       </article>)}</div>
     </section>

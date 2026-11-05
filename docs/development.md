@@ -20,3 +20,5 @@
 当前机器已找到 MySQL Server 8.0.46，服务名为 `MySQL80`。`jwzz` 数据库和本机专用账号已创建，Flyway 负责自动迁移。阶段 5 已在现有 Ubuntu WSL 安装 Redis 7，本机测试通过 `localhost:6379` 连接。
 
 阶段 4 已加入指标报告快照、幂等生成和同条件趋势图。规则尚未经过临床审核，不能作为诊断或治疗依据。报告由用户在“最近录入”中主动生成。
+
+阶段 5 后的消息页迭代见[消息页验收](messages-acceptance.md)：患者和医生分别使用 `/patient/messages`、`/doctor/messages`。此迭代不属于暂缓的阶段 6。

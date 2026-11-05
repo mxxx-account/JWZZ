@@ -18,7 +18,12 @@ export type Report = {
   createdAt: string;
 };
 export type Grant = { doctorId: number; doctorEmail: string };
-export type Consultation = { id: number; reportId: number; userId: number; question: string; status: "OPEN" | "CLAIMED" | "ANSWERED"; claimedDoctorId: number | null; answer: string | null; createdAt: string; claimedAt: string | null; answeredAt: string | null };
+export type Specialty = "GENERAL" | "CARDIOLOGY" | "ENDOCRINOLOGY";
+export type Doctor = { id: number; email: string; displayName: string; specialty: Specialty; lastSeenAt: string | null; online: boolean };
+export type Consultation = { id: number; reportId: number; userId: number; targetDoctorId: number | null; question: string; status: "OPEN" | "CLAIMED" | "ANSWERED"; claimedDoctorId: number | null; answer: string | null; createdAt: string; claimedAt: string | null; answeredAt: string | null };
+export type ChatMessage = { id: number; consultationId: number; senderId: number; body: string; createdAt: string };
+export type Conversation = { id: number; reportId: number; peerId: number; peerName: string; peerSpecialty: Specialty | "用户" | ""; peerOnline: boolean; status: "OPEN" | "CLAIMED" | "ANSWERED"; lastMessage: string; updatedAt: string; unreadCount: number; canSend: boolean };
+export type ConversationDetail = { conversation: Conversation; messages: ChatMessage[] };
 export type IndicatorCatalog = { version: string; items: { code: string; name: string; unit: string; description: string }[] };
 export type NormalizedValue = { code: string; rawValue: number; rawUnit: string; value: number; unit: string; conversionVersion: string };
 export type DraftInterpretation = { ruleCode: string; ruleVersion: string; reviewStatus: string; label: string; explanation: string; applicability: string; sourceTitle: string; sourceUrl: string };
