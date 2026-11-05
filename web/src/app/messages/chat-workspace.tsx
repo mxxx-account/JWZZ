@@ -70,6 +70,12 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
 
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [detail?.messages.length, activeId]);
 
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
   async function send() {
     const body = draft.trim();
     if (!body || activeId === null || !detail?.conversation.canSend || busy) return;

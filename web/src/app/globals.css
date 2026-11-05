@@ -145,6 +145,6 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .chat-placeholder span { font-size: 56px; color: #9acdcc; }
 .chat-placeholder h2 { color: #173044; }
 .chat-placeholder a { color: #126a69; }
-.chat-toast { position: fixed; bottom: 20px; right: 20px; max-width: 420px; padding: 12px 16px; border-radius: 10px; background: #173044; color: #fff; box-shadow: 0 10px 30px #17304444; }
+.chat-toast { position: fixed; top: 78px; right: 20px; max-width: 420px; padding: 12px 16px; border-radius: 10px; background: #173044; color: #fff; box-shadow: 0 10px 30px #17304444; z-index: 20; }
 .chat-toast button { background: transparent; padding: 0 0 0 16px; }
 @media (max-width: 780px) { .chat-nav { gap: 12px; padding: 0 16px; } .chat-frame { grid-template-columns: 130px minmax(0,1fr); height: calc(100vh - 80px); margin: 7px; } .chat-sidebar-head { padding: 14px 8px; } .chat-sidebar-head h1 { font-size: 18px; } .chat-sidebar-head span, .chat-conversation .chat-avatar, .chat-conversation-text small, .chat-meta { display: none; } .chat-search { margin: 4px; } .chat-search input { padding: 7px; font-size: 11px; } .chat-filters { padding: 4px; } .chat-filters button { padding: 5px; font-size: 11px; } .chat-conversation { padding: 10px 6px; } .chat-peer-head { padding: 10px; } .chat-thread { padding: 14px; } .chat-compose { padding: 8px; } .chat-safety { padding: 6px 10px; } }
