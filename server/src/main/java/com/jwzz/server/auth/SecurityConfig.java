@@ -38,11 +38,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository).csrfTokenRequestHandler(csrfHandler))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/error").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/health", "/api/auth/csrf").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/health", "/api/auth/csrf", "/api/public/indicators").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                 .requestMatchers("/api/indicators/**").hasRole("USER")
                 .requestMatchers("/api/indicators").hasRole("USER")
                 .requestMatchers("/api/doctor/**").hasRole("DOCTOR")
+                .requestMatchers("/api/consultations", "/api/consultations/**").hasRole("USER")
                 .requestMatchers(HttpMethod.POST, "/api/reports").hasRole("USER")
                 .requestMatchers("/api/auth/**", "/api/reports/**").authenticated()
                 .anyRequest().denyAll())

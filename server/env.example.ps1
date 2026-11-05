@@ -5,3 +5,4 @@ $env:DB_PASSWORD = 'replace-with-local-password'
 $env:SPRING_PROFILES_ACTIVE = 'dev'
 $env:DEMO_DOCTOR_EMAIL = 'doctor@jwzz.local'
 $env:DEMO_DOCTOR_PASSWORD = 'replace-with-demo-password'
+$env:JWZZ_REDIS_ENABLED = 'true' # Start Redis first; set to 'false' for local fallback.

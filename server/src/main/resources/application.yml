@@ -19,3 +19,6 @@ demo:
   doctor:
     email: ${DEMO_DOCTOR_EMAIL:}
     password: ${DEMO_DOCTOR_PASSWORD:}
+app:
+  redis:
+    enabled: ${JWZZ_REDIS_ENABLED:false}

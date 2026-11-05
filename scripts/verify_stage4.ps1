@@ -1,8 +1,9 @@
 # Requires PowerShell 7 and the local server started with the dev profile.
+param([string]$BaseUrl = 'http://127.0.0.1:8080')
 $ErrorActionPreference = 'Stop'
 Get-Command Invoke-WebRequest | Out-Null
 . (Join-Path $PSScriptRoot '..\server\.env.local.ps1')
-$base = 'http://127.0.0.1:8080'
+$base = $BaseUrl.TrimEnd('/')
 $owner = [Microsoft.PowerShell.Commands.WebRequestSession]::new()
 $other = [Microsoft.PowerShell.Commands.WebRequestSession]::new()
 $doctor = [Microsoft.PowerShell.Commands.WebRequestSession]::new()

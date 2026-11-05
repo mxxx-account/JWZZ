@@ -58,6 +58,18 @@ select { width: 100%; border: 1px solid #a9c1ca; border-radius: 8px; padding: 11
 .trend-chart { margin-top: 20px; padding: 16px; background: #f4faf8; border: 1px solid #dce7ed; border-radius: 14px; }
 .report-section .report-list { margin-top: 22px; }
 .report-section .report-list article, .history-section .entry-list article { background: #f8fbfc; }
+.catalog-help { margin: 0 0 22px; padding: 14px 18px; border-radius: 10px; background: #f4faf8; }
+.catalog-help summary { cursor: pointer; font-weight: 700; color: #126a69; }
+.catalog-help ul { padding-left: 20px; line-height: 1.8; }
+.consultation-area { margin-top: 24px; padding-top: 18px; border-top: 1px solid #dce7ed; }
+.consultation-area h3 { margin: 0; }
+.consultation-area .note { margin: 6px 0 12px; }
+.consultation-form { display: grid; gap: 10px; max-width: 650px; }
+.consultation-form button { justify-self: start; }
+textarea { width: 100%; min-height: 100px; resize: vertical; border: 1px solid #a9c1ca; border-radius: 8px; padding: 11px; font: inherit; }
+.consultation-item { margin-top: 12px; padding: 12px 16px; border-radius: 9px; background: #eef7f6; }
+.consultation-item p { margin: 4px 0; }
+.doctor-consultations .entry-list { display: grid; gap: 12px; }
 @media (max-width: 720px) { .workspace-panel { padding: 20px; } .inline-form { flex-wrap: wrap; } }
 .trend-chart svg { display: block; width: 100%; height: auto; max-height: 300px; }
 .trend-chart ol { max-height: 180px; overflow: auto; }

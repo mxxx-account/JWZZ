@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { api, type IndicatorEntryResponse } from "@/lib/api";
+import { useEffect, useState, type FormEvent } from "react";
+import { api, type IndicatorCatalog, type IndicatorEntryResponse } from "@/lib/api";
 
 type Category = "BP" | "GLUCOSE" | "LIPID";
 type Field = { code: string; label: string; unit: "mmHg" | "%" | "mmol/L"; optional?: boolean };
@@ -34,8 +34,13 @@ export function IndicatorPanel({ onSaved }: { onSaved: () => void }) {
   const [messageKind, setMessageKind] = useState<"success" | "error">("success");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [catalog, setCatalog] = useState<IndicatorCatalog | null>(null);
   const activeFields = category ? fields[category] : [];
   const activeContexts = category ? contexts[category] : [];
+
+  useEffect(() => {
+    api<IndicatorCatalog>("/api/public/indicators").then(setCatalog).catch(() => {});
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -92,6 +97,7 @@ export function IndicatorPanel({ onSaved }: { onSaved: () => void }) {
   return <section className="workspace-panel indicator-panel">
     <h2>录入体检指标</h2>
     <p className="note">可分次录入血压、血糖或血脂。这里只展示研发阶段的参考规则，不提供疾病诊断或患病概率。</p>
+    {catalog && <details className="catalog-help"><summary>指标填写说明</summary><ul>{catalog.items.map(item => <li key={item.code}><strong>{item.name}</strong>（{item.unit}）：{item.description}</li>)}</ul><small>说明版本：{catalog.version}</small></details>}
     <form onSubmit={submit} noValidate>
       <div className="form-grid">
         <label>指标分类<select value={category} onChange={event => { const next = event.target.value as Category; setCategory(next); setContext(contexts[next][0].value); setResult(null); setFieldErrors({}); setMessage(""); }}>
