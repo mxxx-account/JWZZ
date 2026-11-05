@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -83,6 +84,7 @@ public class ReportController {
 
     @Transactional
     @DeleteMapping("/reports/{id}/grants/{doctorId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void revoke(@PathVariable long id, @PathVariable long doctorId, Principal principal) {
         requireOwner(id, current(principal));
         reports.revoke(id, doctorId);

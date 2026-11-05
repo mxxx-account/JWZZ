@@ -34,8 +34,9 @@ nav button { margin-left: auto; background: #e7f0f1; color: #126a69; }
 .inline-form { display: flex; gap: 10px; max-width: 560px; }
 .inline-form button { white-space: nowrap; }
 .secondary { margin-top: 10px; background: #fff2ed; color: #8b3727; }
-.indicator-panel { margin: 26px 0 40px; padding: 26px; background: #fff; border: 1px solid #dce7ed; border-radius: 14px; }
-.indicator-panel .note { margin: 8px 0 22px; }
+.workspace-panel { margin: 26px 0; padding: 28px; background: #fff; border: 1px solid #dce7ed; border-radius: 16px; box-shadow: 0 8px 26px rgba(23, 48, 68, 0.05); }
+.workspace-panel > h2 { margin: 0; padding-bottom: 14px; border-bottom: 2px solid #dff2ef; font-size: 27px; }
+.workspace-panel > .note { margin: 14px 0 22px; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 18px 0; }
 .form-grid label { display: grid; gap: 7px; font-weight: 600; }
 select { width: 100%; border: 1px solid #a9c1ca; border-radius: 8px; padding: 11px; background: #fff; font: inherit; }
@@ -49,13 +50,15 @@ select { width: 100%; border: 1px solid #a9c1ca; border-radius: 8px; padding: 11
 .preview-result article { margin-top: 14px; }
 .preview-result h4 { margin: 0; }
 @media (max-width: 720px) { .form-grid { grid-template-columns: 1fr; } .value-field { align-items: end; } }
-.history-section { margin: 34px 0; }
-.history-section > .note { margin: 8px 0 18px; }
+.history-section { margin: 26px 0; }
 .entry-list { display: grid; gap: 12px; }
 .entry-list article { padding: 18px 22px; }
 .entry-list h3 { margin: 0; }
 .trend-select { display: grid; gap: 8px; max-width: 480px; font-weight: 600; }
-.trend-chart { margin-top: 20px; padding: 16px; background: #fff; border: 1px solid #dce7ed; border-radius: 14px; }
+.trend-chart { margin-top: 20px; padding: 16px; background: #f4faf8; border: 1px solid #dce7ed; border-radius: 14px; }
+.report-section .report-list { margin-top: 22px; }
+.report-section .report-list article, .history-section .entry-list article { background: #f8fbfc; }
+@media (max-width: 720px) { .workspace-panel { padding: 20px; } .inline-form { flex-wrap: wrap; } }
 .trend-chart svg { display: block; width: 100%; height: auto; max-height: 300px; }
 .trend-chart ol { max-height: 180px; overflow: auto; }
 .rule-result { margin: 14px 0; padding: 14px; background: #f4faf8; border-left: 3px solid #126a69; }

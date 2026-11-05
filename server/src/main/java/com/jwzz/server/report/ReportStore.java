@@ -1,13 +1,10 @@
 package com.jwzz.server.report;
 
-import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -65,15 +62,4 @@ public class ReportStore {
         jdbc.update("UPDATE report_access_grant SET revoked_at=CURRENT_TIMESTAMP WHERE report_id=? AND doctor_id=? AND revoked_at IS NULL", reportId, doctorId);
     }
 
-    public long createDemo(long userId) {
-        var keyHolder = new GeneratedKeyHolder();
-        jdbc.update(connection -> {
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO assessment_report (user_id, idempotency_key, rule_set_version, report_json) VALUES (?, UUID(), ?, ?)", Statement.RETURN_GENERATED_KEYS);
-            statement.setLong(1, userId);
-            statement.setString(2, "demo-only");
-            statement.setString(3, "{\"title\":\"演示报告\",\"message\":\"这是一份虚构数据报告，仅用于权限验收。\"}");
-            return statement;
-        }, keyHolder);
-        return keyHolder.getKey().longValue();
-    }
 }

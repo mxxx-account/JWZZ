@@ -55,8 +55,8 @@ export async function api<T>(path: string, method = "GET", body?: unknown): Prom
       : `请求失败（HTTP ${response.status}）`;
     throw new ApiError(response.status, detail ?? fallback);
   }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+  const payload = await response.text();
+  return payload ? JSON.parse(payload) as T : undefined as T;
 }
 
 export async function login(email: string, password: string): Promise<void> {

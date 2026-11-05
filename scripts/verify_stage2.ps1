@@ -1,9 +1,10 @@
 # Run while the local Spring Boot server is started with the dev profile.
+param([string]$BaseUrl = 'http://127.0.0.1:8080')
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..\server\.env.local.ps1')
 # Load the WebCmdlets assembly before resolving WebRequestSession's type.
 Get-Command Invoke-WebRequest | Out-Null
-$base = 'http://127.0.0.1:8080'
+$base = $BaseUrl.TrimEnd('/')
 $userEmail = "acceptance-$([guid]::NewGuid().ToString('N'))@example.invalid"
 $userPassword = 'StageTwoTest123!'
 $userSession = [Microsoft.PowerShell.Commands.WebRequestSession]::new()
@@ -33,9 +34,15 @@ if ($me.role -ne 'USER') { throw 'Registration created unexpected role' }
 Write-Output 'PASS user session'
 
 $token = Csrf $userSession
-$demo = Invoke-RestMethod "$base/api/dev/reports" -Method Post -WebSession $userSession -Headers @{'X-XSRF-TOKEN'=$token}
-$reportId = $demo.id
-Write-Output "PASS demo report created (id=$reportId)"
+$measurement = @{
+    category='BP'; measuredAt=(Get-Date).AddMinutes(-5).ToString('yyyy-MM-ddTHH:mm:ss')
+    context='HOME'; ageYears=22; pregnant=$false
+    values=@{systolic_bp=@{value=130;unit='mmHg'};diastolic_bp=@{value=80;unit='mmHg'}}
+} | ConvertTo-Json -Depth 5
+$entry = Invoke-RestMethod "$base/api/indicators" -Method Post -WebSession $userSession -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=$token} -Body $measurement
+$report = Invoke-RestMethod "$base/api/reports" -Method Post -WebSession $userSession -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=(Csrf $userSession)} -Body (@{entryId=$entry.entryId} | ConvertTo-Json)
+$reportId = $report.id
+Write-Output "PASS indicator report created (id=$reportId)"
 
 Login $doctorSession $env:DEMO_DOCTOR_EMAIL $env:DEMO_DOCTOR_PASSWORD
 $doctorMe = Invoke-RestMethod "$base/api/auth/me" -WebSession $doctorSession
@@ -50,11 +57,14 @@ AssertStatus $during.StatusCode 200 'granted doctor allowed'
 
 $token = Csrf $userSession
 $revoke = Invoke-WebRequest "$base/api/reports/$reportId/grants/$($grant.doctorId)" -Method Delete -WebSession $userSession -Headers @{'X-XSRF-TOKEN'=$token} -SkipHttpErrorCheck
-AssertStatus $revoke.StatusCode 200 'grant revoked'
+AssertStatus $revoke.StatusCode 204 'grant revoked'
+$activeGrants = Invoke-WebRequest "$base/api/reports/$reportId/grants" -WebSession $userSession
+if ($activeGrants.Content.Trim() -ne '[]') { throw 'Revoked grant still visible to patient' }
+Write-Output 'PASS revoked grant removed from patient list'
 $after = Invoke-WebRequest "$base/api/reports/$reportId" -WebSession $doctorSession -SkipHttpErrorCheck
 AssertStatus $after.StatusCode 404 'revoked doctor denied'
 
-$doctorCreate = Invoke-WebRequest "$base/api/dev/reports" -Method Post -WebSession $doctorSession -Headers @{'X-XSRF-TOKEN'=(Csrf $doctorSession)} -SkipHttpErrorCheck
+$doctorCreate = Invoke-WebRequest "$base/api/reports" -Method Post -WebSession $doctorSession -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=(Csrf $doctorSession)} -Body (@{entryId=$entry.entryId} | ConvertTo-Json) -SkipHttpErrorCheck
 AssertStatus $doctorCreate.StatusCode 403 'doctor cannot create patient report'
 
 $otherSession = [Microsoft.PowerShell.Commands.WebRequestSession]::new()
@@ -70,7 +80,7 @@ AssertStatus $otherGrant.StatusCode 404 'other user cannot grant report'
 
 # PowerShell persists request headers in WebRequestSession; remove the prior token explicitly.
 [void]$userSession.Headers.Remove('X-XSRF-TOKEN')
-$noCsrf = Invoke-WebRequest "$base/api/dev/reports" -Method Post -WebSession $userSession -SkipHttpErrorCheck
+$noCsrf = Invoke-WebRequest "$base/api/reports" -Method Post -WebSession $userSession -ContentType 'application/json' -Body (@{entryId=$entry.entryId} | ConvertTo-Json) -SkipHttpErrorCheck
 AssertStatus $noCsrf.StatusCode 403 'mutation without CSRF token denied'
 $logout = Invoke-WebRequest "$base/api/auth/logout" -Method Post -WebSession $userSession -Headers @{'X-XSRF-TOKEN'=(Csrf $userSession)} -SkipHttpErrorCheck
 AssertStatus $logout.StatusCode 204 'logout'

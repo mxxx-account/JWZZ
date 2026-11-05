@@ -57,7 +57,7 @@ export function TrendPanel({ refreshKey }: { refreshKey: number }) {
     api<StoredIndicator[]>(`/api/indicators/trends?code=${encodeURIComponent(code)}&context=${encodeURIComponent(context)}`)
       .then(setRows).catch(() => setMessage("无法读取趋势数据。"));
   }, [selected, refreshKey]);
-  return <section className="history-section">
+  return <section className="workspace-panel history-section">
     <h2>同类指标趋势</h2>
     <p className="note">只比较同一指标和同一测量条件下最近 50 次标准化数值。折线仅表示记录变化，不代表病情变化或诊断结论。</p>
     {options.length ? <label className="trend-select">选择指标与条件<select value={selected} onChange={event => setSelected(event.target.value)}>

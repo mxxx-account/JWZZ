@@ -35,7 +35,7 @@ export function EntryHistory({ refreshKey, onGenerated }: { refreshKey: number; 
     finally { setBusy(""); }
   }
 
-  return <section className="history-section">
+  return <section className="workspace-panel history-section">
     <h2>最近录入</h2>
     <p className="note">按一次录入分组展示最近 100 条指标明细。点击生成报告会固定当时的数值与研发规则版本。</p>
     {message && <p role="status" className="notice">{message}</p>}

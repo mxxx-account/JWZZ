@@ -89,8 +89,8 @@ export function IndicatorPanel({ onSaved }: { onSaved: () => void }) {
     } finally { setBusy(false); }
   }
 
-  return <section className="indicator-panel">
-    <h2>录入体测指标</h2>
+  return <section className="workspace-panel indicator-panel">
+    <h2>录入体检指标</h2>
     <p className="note">可分次录入血压、血糖或血脂。这里只展示研发阶段的参考规则，不提供疾病诊断或患病概率。</p>
     <form onSubmit={submit} noValidate>
       <div className="form-grid">
