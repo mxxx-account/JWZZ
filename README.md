@@ -12,6 +12,8 @@
 
 开发说明见 [docs/development.md](docs/development.md)，任务清单见 [docs/implementation-plan.md](docs/implementation-plan.md)，输入设计见 [docs/indicator-dictionary.md](docs/indicator-dictionary.md)。报告与趋势验收见 [docs/stage4-acceptance.md](docs/stage4-acceptance.md)，演示咨询与 Redis 验收见 [docs/stage5-acceptance.md](docs/stage5-acceptance.md)。规则仍是待临床审核的研发预览。
 
+当前 Web 平台的[架构图](docs/architecture.md)、[数据库设计图](docs/database-design.md)、[接口文档](docs/api-reference.md)、[测试与压测报告](docs/test-report.md)、[Docker Compose 验收说明](docs/compose-validation.md)、[技术难点与取舍](docs/technical-tradeoffs.md)及[演示脚本](docs/demo-script.md)已单独整理。
+
 ## 旧模型原型
 
 本仓库先完成可复现的机器学习模型，再接入 Electron 桌面客户端。

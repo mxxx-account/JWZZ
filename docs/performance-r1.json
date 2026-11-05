@@ -1,0 +1,16 @@
+{
+  "measuredAt": "2026-11-05T13:33:11.251Z",
+  "base": "http://127.0.0.1:8080",
+  "nodeVersion": "v24.19.0",
+  "platform": "win32",
+  "syntheticReports": 1,
+  "requestsPerRoute": 400,
+  "concurrency": 20,
+  "warmupPerRoute": 15,
+  "results": [
+    { "label": "health", "path": "/api/health", "requests": 400, "concurrency": 20, "elapsedSeconds": 0.133, "throughputRps": 3008, "bytes": 15600, "p50Ms": 6.2, "p95Ms": 12, "p99Ms": 16.6, "maxMs": 17.8, "errors": {} },
+    { "label": "catalog", "path": "/api/public/indicators", "requests": 400, "concurrency": 20, "elapsedSeconds": 0.542, "throughputRps": 737.5, "bytes": 486800, "p50Ms": 27.3, "p95Ms": 39.4, "p99Ms": 50.5, "maxMs": 68, "errors": {} },
+    { "label": "indicator-history", "path": "/api/indicators", "requests": 400, "concurrency": 20, "elapsedSeconds": 0.119, "throughputRps": 3374.8, "bytes": 214400, "p50Ms": 4.4, "p95Ms": 13.8, "p99Ms": 21.6, "maxMs": 54.4, "errors": {} },
+    { "label": "report-list", "path": "/api/reports", "requests": 400, "concurrency": 20, "elapsedSeconds": 0.117, "throughputRps": 3404.9, "bytes": 540000, "p50Ms": 4.2, "p95Ms": 14.8, "p99Ms": 40.9, "maxMs": 44.4, "errors": {} }
+  ]
+}

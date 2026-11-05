@@ -1,0 +1,61 @@
+# Isolated, disposable full-stack verification; does not bind the existing local MySQL/Redis ports.
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: jwzz
+      MYSQL_USER: jwzz
+      MYSQL_PASSWORD: ${JWZZ_COMPOSE_DB_PASSWORD:-jwzz_dev_only}
+      MYSQL_ROOT_PASSWORD: ${JWZZ_COMPOSE_ROOT_PASSWORD:-root_dev_only}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+  server:
+    build:
+      context: ./server
+      args:
+        HTTP_PROXY: ${JWZZ_BUILD_PROXY:-}
+        HTTPS_PROXY: ${JWZZ_BUILD_PROXY:-}
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/jwzz?useUnicode=true&characterEncoding=utf8
+      DB_USER: jwzz
+      DB_PASSWORD: ${JWZZ_COMPOSE_DB_PASSWORD:-jwzz_dev_only}
+      SPRING_PROFILES_ACTIVE: dev
+      DEMO_DOCTOR_EMAIL: doctor@jwzz.local
+      DEMO_DOCTOR_PASSWORD: ${JWZZ_COMPOSE_DOCTOR_PASSWORD:-ChangeThisDemoPassword123!}
+      JWZZ_REDIS_ENABLED: "true"
+      REDIS_HOST: redis
+      JWZZ_CORS_ORIGINS: http://localhost:3001,http://127.0.0.1:3001
+    ports:
+      - "127.0.0.1:8081:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  web:
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8081
+        HTTP_PROXY: ${JWZZ_BUILD_PROXY:-}
+        HTTPS_PROXY: ${JWZZ_BUILD_PROXY:-}
+    environment:
+      JWZZ_API_BASE_URL: http://server:8080
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      - server
+volumes:
+  mysql_data:

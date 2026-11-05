@@ -1,6 +1,12 @@
-param([string]$BaseUrl = 'http://127.0.0.1:8080')
+param([string]$BaseUrl = 'http://127.0.0.1:8080', [string]$DoctorPassword = '')
 $ErrorActionPreference = 'Stop'
-. (Join-Path $PSScriptRoot '..\server\.env.local.ps1')
+if (-not $DoctorPassword) {
+    $localConfig = Join-Path $PSScriptRoot '..\server\.env.local.ps1'
+    if (Test-Path $localConfig) { . $localConfig }
+    $DoctorPassword = $env:DEMO_DOCTOR_PASSWORD
+}
+if (-not $DoctorPassword) { throw 'Pass -DoctorPassword or set DEMO_DOCTOR_PASSWORD' }
+$generalEmail = if ($env:DEMO_DOCTOR_EMAIL) { $env:DEMO_DOCTOR_EMAIL } else { 'doctor@jwzz.local' }
 $base = $BaseUrl.TrimEnd('/')
 $user = [Microsoft.PowerShell.Commands.WebRequestSession]::new()
 $general = [Microsoft.PowerShell.Commands.WebRequestSession]::new()
@@ -22,8 +28,8 @@ function Check($response, [int]$expected, [string]$label) {
 
 Check (PostJson '/api/auth/register' $user @{email=$email;password=$password}) 201 'register user'
 Login $user $email $password
-Login $general $env:DEMO_DOCTOR_EMAIL $env:DEMO_DOCTOR_PASSWORD
-Login $cardiology 'doctor.cardiology@jwzz.local' $env:DEMO_DOCTOR_PASSWORD
+Login $general $generalEmail $DoctorPassword
+Login $cardiology 'doctor.cardiology@jwzz.local' $DoctorPassword
 Check (PostJson '/api/doctor/presence' $cardiology @{}) 204 'doctor heartbeat'
 $directory = Invoke-RestMethod "$base/api/doctors" -WebSession $user
 if ($directory.Count -lt 3 -or -not ($directory | Where-Object { $_.email -eq 'doctor.cardiology@jwzz.local' -and $_.online })) { throw 'Doctor directory or online presence mismatch' }
