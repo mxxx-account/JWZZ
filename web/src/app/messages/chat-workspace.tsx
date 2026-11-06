@@ -31,6 +31,9 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
     const next = await api<ConversationDetail>(`/api/messages/conversations/${id}`);
     setDetail(next);
     await api<void>(`/api/messages/conversations/${id}/read`, "POST");
+    setItems(previous => previous.map(item => item.id === id ? { ...item, unreadCount: 0 } : item));
+    setDetail(previous => previous?.conversation.id === id
+      ? { ...previous, conversation: { ...previous.conversation, unreadCount: 0 } } : previous);
   }, []);
 
   useEffect(() => {
@@ -113,7 +116,7 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
         <div className="chat-sidebar-head"><h1>消息</h1><span>{items.reduce((sum, item) => sum + item.unreadCount, 0)} 条未读</span></div>
         <label className="chat-search"><span className="sr-only">搜索会话</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="搜索联系人、科室或报告" /></label>
         <div className="chat-filters"><button className={!unreadOnly ? "active" : ""} onClick={() => setUnreadOnly(false)}>全部</button><button className={unreadOnly ? "active" : ""} onClick={() => setUnreadOnly(true)}>未读</button></div>
-        <div className="chat-conversation-list">{visible.map(item => <button key={item.id} className={`chat-conversation ${activeId === item.id ? "selected" : ""}`} onClick={() => { setActiveId(item.id); window.history.replaceState(null, "", `?conversation=${item.id}`); }}>
+        <div className="chat-conversation-list">{visible.map(item => <button key={item.id} data-conversation-id={item.id} className={`chat-conversation ${activeId === item.id ? "selected" : ""}`} onClick={() => { if (activeId === item.id) void refreshDetail(item.id).catch(error => setNotice(error instanceof Error ? error.message : "无法读取会话。")); else setActiveId(item.id); window.history.replaceState(null, "", `?conversation=${item.id}`); }}>
           <span className="chat-avatar" aria-hidden="true">{item.peerName.slice(0, 1)}</span><span className="chat-conversation-text"><strong>{item.peerName}</strong><small>{item.peerSpecialty in specialtyLabels ? specialtyLabels[item.peerSpecialty as keyof typeof specialtyLabels] : item.peerSpecialty} · 报告 #{item.reportId}</small><span>{item.lastMessage}</span></span><span className="chat-meta"><small>{time(item.updatedAt)}</small>{item.unreadCount > 0 && <b>{item.unreadCount}</b>}</span>
         </button>)}</div>
         {visible.length === 0 && <p className="chat-empty-list">{items.length ? "没有符合筛选条件的会话。" : role === "USER" ? "还没有会话。请先到报告页授权医生并提交咨询。" : "还没有收到咨询。"}</p>}
@@ -122,7 +125,7 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
         {current ? <><div className="chat-peer-head"><span className="chat-avatar" aria-hidden="true">{current.peerName.slice(0, 1)}</span><div><h2>{current.peerName}</h2><p>{current.peerSpecialty in specialtyLabels ? specialtyLabels[current.peerSpecialty as keyof typeof specialtyLabels] : current.peerSpecialty} · 报告 #{current.reportId} · {current.peerOnline ? "页面活跃" : "当前离线"}</p></div><span className="chat-status">{current.status === "OPEN" ? "待接单" : "对话中"}</span></div>
           <div className="chat-safety">本页面仅用于项目流程演示，不提供正式诊断、处方或急症响应。如出现胸痛、严重呼吸困难等急症，请及时寻求线下急救。</div>
           <div className="chat-thread">{detail?.messages.map(message => <div key={message.id} className={`chat-row ${message.senderId === user?.id ? "mine" : "theirs"}`}><div className="chat-bubble">{message.body}</div><small>{time(message.createdAt)}</small></div>)}<div ref={bottom} /></div>
-          <div className="chat-compose">{role === "DOCTOR" && current.status === "OPEN" && <button className="chat-claim" disabled={busy} onClick={claim}>接单并开始回复</button>}
+          <div className="chat-compose">{role === "DOCTOR" && current.status === "OPEN" && <button className="chat-claim" disabled={busy} onClick={claim}>接受咨询并开始回复</button>}
             <textarea aria-label="输入消息" maxLength={2000} value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} disabled={!current.canSend || busy} placeholder={current.canSend ? "输入消息… Enter 发送，Shift+Enter 换行" : role === "DOCTOR" ? "请先接单后回复" : "报告授权已撤销，暂不能继续发送"}/>
             <div className="chat-compose-foot"><small>异步消息 · 不保证医生即时回复</small><button disabled={busy || !current.canSend || !draft.trim()} onClick={send}>发送</button></div>
           </div></> : <div className="chat-placeholder"><span>✉</span><h2>选择一个会话</h2><p>{role === "USER" ? "到工作台的报告板块可以选择医生并发起咨询。" : "用户提交咨询后，会话会出现在左侧。"}</p><Link href={dashboard}>返回工作台</Link></div>}
