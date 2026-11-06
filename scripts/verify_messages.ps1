@@ -58,9 +58,13 @@ $otherList = Invoke-RestMethod "$base/api/messages/conversations" -WebSession $g
 if ($otherList | Where-Object id -eq $id) { throw 'Non-target doctor sees conversation' }
 Write-Output 'PASS target-doctor isolation'
 $targetList = Invoke-RestMethod "$base/api/messages/conversations" -WebSession $cardiology
-if (-not ($targetList | Where-Object { $_.id -eq $id -and $_.unreadCount -eq 1 })) { throw 'Target doctor did not receive unread conversation' }
-Write-Output 'PASS doctor received unread message'
+if ($targetList | Where-Object id -eq $id) { throw 'Unaccepted consultation already appears in doctor chats' }
+Write-Output 'PASS unaccepted consultation stays on doctor home'
+Check (Invoke-WebRequest "$base/api/messages/conversations/$id" -WebSession $cardiology -SkipHttpErrorCheck) 404 'unaccepted doctor cannot open chat directly'
 Check (PostJson "/api/doctor/consultations/$id/claim" $cardiology @{}) 200 'claim conversation'
+$targetList = Invoke-RestMethod "$base/api/messages/conversations" -WebSession $cardiology
+if (-not ($targetList | Where-Object { $_.id -eq $id -and $_.unreadCount -eq 1 })) { throw 'Accepted consultation did not open unread doctor conversation' }
+Write-Output 'PASS accepted consultation opens doctor chat'
 Check (PostJson "/api/messages/conversations/$id" $cardiology @{body='请记录多次测量的时间和条件，线下与医生核对。'}) 201 'doctor sends message'
 Check (PostJson "/api/messages/conversations/$id" $user @{body='好的，我会准备测量记录。'}) 201 'patient continues same conversation'
 $history = Invoke-RestMethod "$base/api/messages/conversations/$id" -WebSession $cardiology

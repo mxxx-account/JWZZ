@@ -33,6 +33,8 @@ nav button { margin-left: auto; background: #e7f0f1; color: #126a69; }
 .report-list { display: grid; gap: 16px; margin-top: 30px; }
 .report-heading { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
 .report-heading small { color: #526978; }
+.doctor-request { margin: 18px 0; padding: 14px 18px; border-left: 4px solid #126a69; background: #eef8f6; border-radius: 8px; }
+.doctor-request p { margin: 6px 0 0; white-space: pre-wrap; }
 .inline-form { display: flex; gap: 10px; max-width: 560px; }
 .inline-form button { white-space: nowrap; }
 .secondary { margin-top: 10px; background: #fff2ed; color: #8b3727; }

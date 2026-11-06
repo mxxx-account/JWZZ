@@ -89,7 +89,7 @@ export default function PatientPage() {
         <h3>向医生发起消息</h3><p className="note">仅演示异步消息，不是实时问诊。未填写时将发送“您好，请帮我看看我的指标报告！”。如有胸痛、胸闷等急症不适，请及时线下就医，不要等待聊天回复。</p>
         {Boolean(grants[report.id]?.length) && <div className="consultation-form"><textarea aria-label={`关于报告 ${report.id} 的问题`} maxLength={1000} placeholder="可填写想咨询的问题；留空则发送默认问候语" value={questions[report.id] ?? ""} onChange={event => setQuestions(previous => ({ ...previous, [report.id]: event.target.value }))} /><button disabled={busy} onClick={() => askDoctor(report.id)}>提交咨询并打开消息</button></div>}
         {!grants[report.id]?.length && <p className="note">先授权医生查看这份报告，才能提交咨询请求。</p>}
-        {consultations.filter(item => item.reportId === report.id).map(item => <div className="consultation-item" key={item.id}><Link href={`/patient/messages?conversation=${item.id}`}>咨询 #{item.id} · {item.status === "OPEN" ? "待接单" : item.status === "CLAIMED" ? "医生已接单" : "查看消息"}</Link></div>)}
+        {consultations.filter(item => item.reportId === report.id).map(item => <div className="consultation-item" key={item.id}><Link href={`/patient/messages?conversation=${item.id}`}>咨询 #{item.id} · {item.status === "OPEN" ? "待医生接受" : item.status === "CLAIMED" ? "医生已接受" : "查看消息"}</Link></div>)}
       </div>
       </article>)}</div>
     </section>

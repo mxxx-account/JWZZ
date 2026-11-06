@@ -56,12 +56,14 @@ test("患者录入、生成报告、授权咨询，医生接单回复，撤销�
     await doctor.getByLabel("密码").fill(doctorPassword!);
     await doctor.getByRole("button", { name: "登录", exact: true }).last().click();
     await expect(doctor).toHaveURL(/\/doctor$/);
-    await expect(doctor.locator(`.report-list > article[data-report-id="${reportId}"]`)).toBeVisible();
+    const pending = doctor.locator(`.report-list > article[data-report-id="${reportId}"]`);
+    await expect(pending).toBeVisible();
+    await expect(pending.locator(".doctor-request")).toContainText("您好，请帮我看看我的指标报告！");
     await doctor.getByRole("link", { name: "见微知著" }).click();
     await expect(doctor).toHaveURL(/\/doctor$/);
-    await doctor.goto(`/doctor/messages?conversation=${conversationId}`);
+    await pending.getByRole("button", { name: "接受咨询并进入消息" }).click();
+    await expect(doctor).toHaveURL(new RegExp(`/doctor/messages\\?conversation=${conversationId}$`));
     await expect(doctor.locator(".chat-bubble").first()).toHaveText("您好，请帮我看看我的指标报告！");
-    await doctor.getByRole("button", { name: "接受咨询并开始回复" }).click();
     await doctor.getByLabel("输入消息").fill("请整理测量记录，再与线下医生核对。");
     await doctor.getByRole("button", { name: "发送", exact: true }).click();
     await expect(page.locator(".chat-bubble").filter({ hasText: "请整理测量记录，再与线下医生核对。" })).toBeVisible();
@@ -73,6 +75,15 @@ test("患者录入、生成报告、授权咨询，医生接单回复，撤销�
     const secondId = new URL(page.url()).searchParams.get("conversation");
     expect(secondId).not.toBe(conversationId);
     const newConversation = doctor.locator(`.chat-conversation[data-conversation-id="${secondId}"]`);
+    await expect(newConversation).toHaveCount(0);
+    await doctor.getByRole("link", { name: "首页" }).click();
+    const secondPending = doctor.locator(`.report-list > article[data-consultation-id="${secondId}"]`);
+    await expect(secondPending).toBeVisible({ timeout: 20_000 });
+    await secondPending.getByRole("button", { name: "接受咨询并进入消息" }).click();
+    await expect(doctor).toHaveURL(new RegExp(`/doctor/messages\\?conversation=${secondId}$`));
+    await doctor.locator(`.chat-conversation[data-conversation-id="${conversationId}"]`).click();
+    await page.getByLabel("输入消息").fill("我补充了新的测量记录。");
+    await page.getByRole("button", { name: "发送", exact: true }).click();
     await expect(newConversation.locator(".chat-meta b")).toHaveText("1", { timeout: 20_000 });
     await newConversation.click();
     await expect(doctor.locator(".chat-peer-head")).toBeVisible();
@@ -111,7 +122,7 @@ test("医生填写姓名和科室注册，单次登录后进入医生首页", as
   await expect(page).toHaveURL(/\/doctor$/);
 });
 
-test("医生首页已打开时，新授权报告自动出现", async ({ page, browser }) => {
+test("医生首页已打开时，新待咨询报告自动出现", async ({ page, browser }) => {
   const doctorPassword = process.env.DEMO_DOCTOR_PASSWORD;
   test.skip(!doctorPassword, "先加载本地医生演示密码");
   const doctorContext = await browser.newContext();
@@ -144,6 +155,9 @@ test("医生首页已打开时，新授权报告自动出现", async ({ page, br
     await report.getByLabel("通过医生账号（邮箱）授权").fill("doctor.cardiology@jwzz.local");
     await report.getByRole("button", { name: "授权此医生", exact: true }).click();
     await expect(report.getByText("当前授权：李华医生（演示）")).toBeVisible();
+    await expect(doctor.locator(`.report-list > article[data-report-id="${reportId}"]`)).toHaveCount(0);
+    await report.getByRole("button", { name: "提交咨询并打开消息" }).click();
+    await expect(page).toHaveURL(/\/patient\/messages\?conversation=\d+/);
     await expect(doctor.locator(`.report-list > article[data-report-id="${reportId}"]`)).toBeVisible({ timeout: 20_000 });
   } finally {
     await doctorContext.close();

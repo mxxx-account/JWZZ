@@ -47,7 +47,8 @@ public class MessageController {
         var user = current(principal);
         boolean doctor = user.role().equals("DOCTOR");
         var list = doctor ? consultations.forDoctor(user.id()) : consultations.forUser(user.id());
-        return list.stream().map(item -> summary(item, user, doctor)).toList();
+        return list.stream().filter(item -> !doctor || (item.claimedDoctorId() != null && item.claimedDoctorId() == user.id()))
+            .map(item -> summary(item, user, doctor)).toList();
     }
 
     @GetMapping("/conversations/{id}")
@@ -116,6 +117,7 @@ public class MessageController {
 
     private ConsultationStore.Consultation accessible(long id, UserStore.User user, boolean doctor) {
         if (doctor) return consultations.findForDoctor(id, user.id())
+            .filter(item -> item.claimedDoctorId() != null && item.claimedDoctorId() == user.id())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return consultations.find(id).filter(item -> item.userId() == user.id())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));

@@ -93,18 +93,6 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
     finally { setBusy(false); }
   }
 
-  async function claim() {
-    if (activeId === null) return;
-    setBusy(true); setNotice("");
-    try {
-      await api(`/api/doctor/consultations/${activeId}/claim`, "POST");
-      await refreshDetail(activeId);
-      await refreshList();
-      setNotice("接单成功，现在可以回复。");
-    } catch (error) { setNotice(error instanceof Error ? error.message : "接单失败。"); }
-    finally { setBusy(false); }
-  }
-
   const visible = items.filter(item => (!unreadOnly || item.unreadCount > 0)
     && `${item.peerName} ${item.peerSpecialty} ${item.lastMessage} ${item.reportId}`.toLowerCase().includes(query.toLowerCase()));
   const current = detail?.conversation;
@@ -120,14 +108,14 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
         <div className="chat-conversation-list">{visible.map(item => <button key={item.id} data-conversation-id={item.id} className={`chat-conversation ${activeId === item.id ? "selected" : ""}`} onClick={() => { if (activeId === item.id) void refreshDetail(item.id).catch(error => setNotice(error instanceof Error ? error.message : "无法读取会话。")); else setActiveId(item.id); window.history.replaceState(null, "", `?conversation=${item.id}`); }}>
           <span className="chat-avatar" aria-hidden="true">{item.peerName.slice(0, 1)}</span><span className="chat-conversation-text"><strong>{item.peerName}</strong><small>{item.peerSpecialty in specialtyLabels ? specialtyLabels[item.peerSpecialty as keyof typeof specialtyLabels] : item.peerSpecialty} · 报告 #{item.reportId}</small><span>{item.lastMessage}</span></span><span className="chat-meta"><small>{time(item.updatedAt)}</small>{item.unreadCount > 0 && <b>{item.unreadCount}</b>}</span>
         </button>)}</div>
-        {visible.length === 0 && <p className="chat-empty-list">{items.length ? "没有符合筛选条件的会话。" : role === "USER" ? "还没有会话。请先到报告页授权医生并提交咨询。" : "还没有收到咨询。"}</p>}
+        {visible.length === 0 && <p className="chat-empty-list">{items.length ? "没有符合筛选条件的会话。" : role === "USER" ? "还没有会话。请先到报告页授权医生并提交咨询。" : "还没有已接受的咨询。请到首页查看待咨询列表。"}</p>}
       </aside>
       <section className="chat-main" aria-label="聊天内容">
-        {current ? <><div className="chat-peer-head"><span className="chat-avatar" aria-hidden="true">{current.peerName.slice(0, 1)}</span><div><h2>{current.peerName}</h2><p>{current.peerSpecialty in specialtyLabels ? specialtyLabels[current.peerSpecialty as keyof typeof specialtyLabels] : current.peerSpecialty} · 报告 #{current.reportId} · {current.peerOnline ? "页面活跃" : "当前离线"}</p></div><span className="chat-status">{current.status === "OPEN" ? "待接单" : "对话中"}</span></div>
+        {current ? <><div className="chat-peer-head"><span className="chat-avatar" aria-hidden="true">{current.peerName.slice(0, 1)}</span><div><h2>{current.peerName}</h2><p>{current.peerSpecialty in specialtyLabels ? specialtyLabels[current.peerSpecialty as keyof typeof specialtyLabels] : current.peerSpecialty} · 报告 #{current.reportId} · {current.peerOnline ? "页面活跃" : "当前离线"}</p></div><span className="chat-status">{current.status === "OPEN" ? "待医生接受" : "对话中"}</span></div>
           <div className="chat-safety">本页面仅用于项目流程演示，不提供正式诊断、处方或急症响应。如出现胸痛、严重呼吸困难等急症，请及时寻求线下急救。</div>
           <div className="chat-thread">{detail?.messages.map(message => <div key={message.id} className={`chat-row ${message.senderId === user?.id ? "mine" : "theirs"}`}><div className="chat-bubble">{message.body}</div><small>{time(message.createdAt)}</small></div>)}<div ref={bottom} /></div>
-          <div className="chat-compose">{role === "DOCTOR" && current.status === "OPEN" && <button className="chat-claim" disabled={busy} onClick={claim}>接受咨询并开始回复</button>}
-            <textarea aria-label="输入消息" maxLength={2000} value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} disabled={!current.canSend || busy} placeholder={current.canSend ? "输入消息… Enter 发送，Shift+Enter 换行" : role === "DOCTOR" ? "请先接单后回复" : "报告授权已撤销，暂不能继续发送"}/>
+          <div className="chat-compose">
+            <textarea aria-label="输入消息" maxLength={2000} value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} disabled={!current.canSend || busy} placeholder={current.canSend ? "输入消息… Enter 发送，Shift+Enter 换行" : role === "DOCTOR" ? "请先在首页接受咨询" : "报告授权已撤销，暂不能继续发送"}/>
             <div className="chat-compose-foot"><small>异步消息 · 不保证医生即时回复</small><button disabled={busy || !current.canSend || !draft.trim()} onClick={send}>发送</button></div>
           </div></> : <div className="chat-placeholder"><span>✉</span><h2>选择一个会话</h2><p>{role === "USER" ? "到首页的报告板块可以选择医生并发起咨询。" : "用户提交咨询后，会话会出现在左侧。"}</p><Link href={dashboard}>返回首页</Link></div>}
       </section>

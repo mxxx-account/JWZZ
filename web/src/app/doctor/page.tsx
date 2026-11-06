@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, type Consultation, type CurrentUser, type Report } from "@/lib/api";
 import { ReportContent } from "../report-content";
@@ -13,6 +12,7 @@ export default function DoctorPage() {
   const [reports, setReports] = useState<Report[]>([]);
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [message, setMessage] = useState("");
+  const [acceptingId, setAcceptingId] = useState<number | null>(null);
 
   useEffect(() => {
     api<CurrentUser>("/api/auth/me").then(async current => {
@@ -23,7 +23,7 @@ export default function DoctorPage() {
         api<Report[]>("/api/doctor/reports"), api<Consultation[]>("/api/doctor/consultations")
       ]);
       if (reportResult.status === "fulfilled") setReports(reportResult.value);
-      else setMessage("授权报告读取失败，请点击刷新重试。");
+      else setMessage("待咨询报告读取失败，请点击刷新重试。");
       if (consultationResult.status === "fulfilled") setConsultations(consultationResult.value);
       else setMessage(previous => previous ? `${previous} 咨询列表读取失败。` : "咨询列表读取失败，请点击刷新重试。");
     }).catch(() => router.replace("/"));
@@ -52,24 +52,40 @@ export default function DoctorPage() {
     if (reportResult.status === "fulfilled") setReports(reportResult.value);
     if (consultationResult.status === "fulfilled") setConsultations(consultationResult.value);
     setMessage(reportResult.status === "fulfilled" && consultationResult.status === "fulfilled"
-      ? "已更新授权列表与咨询。" : "部分数据读取失败，请稍后重试。");
+      ? "待咨询列表已更新。" : "部分待咨询数据读取失败，请稍后重试。");
   }
+
+  async function accept(id: number) {
+    setAcceptingId(id); setMessage("");
+    try {
+      await api(`/api/doctor/consultations/${id}/claim`, "POST");
+      setConsultations(previous => previous.filter(item => item.id !== id));
+      router.push(`/doctor/messages?conversation=${id}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "接受咨询失败，请刷新后重试。");
+      await refresh();
+    } finally { setAcceptingId(null); }
+  }
+
+  const pending = consultations.filter(item => item.status === "OPEN");
+  const reportById = new Map(reports.map(report => [report.id, report]));
 
   return <><AppNav role="DOCTOR" active="home" /><main className="shell dashboard">
     <p className="eyebrow">已登录：{user?.name || user?.email || "加载中…"} · {user?.email}</p>
-    <h1>获授权的报告</h1>
+    <h1>待咨询的报告</h1>
     <p className="lead">当前医生账号仅用于项目演示，不代表执业资质已核验或真实在线诊疗服务。</p>
-    <button onClick={refresh}>刷新授权列表</button>
+    <button onClick={refresh}>刷新待咨询列表</button>
     {message && <p role="status" className="notice">{message}</p>}
-    {reports.length === 0 && <p className="notice">目前没有用户授权的报告。</p>}
-    <div className="report-list">{reports.map(report => <article key={report.id} data-report-id={report.id}>
-      <div className="report-heading"><h2>{report.content.title ?? `报告 #${report.id}`}</h2><small>用户编号 #{report.ownerId} · {new Date(report.createdAt).toLocaleString("zh-CN")}</small></div>
-      <ReportContent report={report} />
-      <p className="note">这份报告会在用户撤销授权后从列表中消失。</p>
-    </article>)}</div>
-    <section className="workspace-panel doctor-consultations"><h2>收到的咨询</h2><p className="note">点击进入消息页接单、查看完整对话及回复；撤销授权后该会话会从医生列表消失。</p>
-      {consultations.length === 0 && <p className="notice">目前没有可处理的咨询。</p>}
-      <div className="entry-list">{consultations.map(item => <article key={item.id}><h3>咨询 #{item.id} · 报告 #{item.reportId}</h3><p>{item.question}</p><Link href={`/doctor/messages?conversation=${item.id}`}>打开消息 →</Link></article>)}</div>
-    </section>
+    <p className="note">用户授权并提交咨询后，报告与附带消息会出现在这里。接受后进入消息页继续交流；仅授权、尚未提交咨询的报告不会列入待咨询。</p>
+    {pending.length === 0 && <p className="notice">目前没有待接受的咨询。</p>}
+    <div className="report-list">{pending.map(item => {
+      const report = reportById.get(item.reportId);
+      return <article key={item.id} data-consultation-id={item.id} data-report-id={item.reportId}>
+        <div className="report-heading"><h2>{report?.content.title ?? `报告 #${item.reportId}`}</h2><small>咨询 #{item.id} · 用户编号 #{item.userId}</small></div>
+        {report ? <ReportContent report={report} /> : <p className="notice">报告内容暂未加载，请刷新待咨询列表。</p>}
+        <div className="doctor-request"><strong>用户附带的消息</strong><p>{item.question}</p></div>
+        <button disabled={acceptingId !== null || !report} onClick={() => accept(item.id)}>{acceptingId === item.id ? "正在接受…" : "接受咨询并进入消息"}</button>
+      </article>;
+    })}</div>
   </main></>;
 }
