@@ -34,6 +34,22 @@ test("患者录入、生成报告、授权咨询，医生接单回复，撤销�
   const report = page.locator(".archive-detail");
   const reportId = (await report.locator(".report-heading small").textContent())?.match(/#(\d+)/)?.[1];
   expect(reportId).toBeTruthy();
+  await expect(report.locator(".doctor-option").first()).toBeVisible();
+  const doctorViewport = await report.locator(".doctor-options").evaluate(element => ({
+    height: element.clientHeight,
+    fullHeight: element.scrollHeight,
+    overflow: getComputedStyle(element).overflowY,
+    columns: getComputedStyle(element).gridTemplateColumns.split(" ").length,
+    count: element.childElementCount,
+  }));
+  expect(doctorViewport.height).toBeLessThanOrEqual(312);
+  expect(doctorViewport.overflow).toBe("scroll");
+  if (doctorViewport.count > doctorViewport.columns * 2) {
+    expect(doctorViewport.fullHeight).toBeGreaterThan(doctorViewport.height);
+    await report.locator(".doctor-option").last().scrollIntoViewIfNeeded();
+    await report.locator(".doctor-option").last().click();
+    await expect(report.locator(".doctor-option").last()).toHaveAttribute("aria-pressed", "true");
+  }
   await page.getByLabel("指标类别").selectOption("GLUCOSE");
   await page.getByRole("button", { name: "查找报告" }).click();
   await expect(page.locator(".archive-row")).toHaveCount(0);

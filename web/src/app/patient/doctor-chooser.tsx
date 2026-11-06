@@ -37,12 +37,13 @@ export function DoctorChooser({ report, allReports, doctors, grants, selectedId,
         <option value="ALL">全部</option><option value="ONLINE">在线</option><option value="OFFLINE">离线</option>
       </select>
     </label>
-    <div className="doctor-options">{options.map(doctor => <button type="button" key={doctor.id} className={`doctor-option ${selectedId === doctor.id ? "selected" : ""}`} aria-pressed={selectedId === doctor.id} onClick={() => onSelect(doctor.id)}>
-      <span className="doctor-avatar" aria-hidden="true">{doctor.displayName.slice(0, 1)}</span>
-      <span><strong>{doctor.displayName}</strong><small>{doctor.email}</small><small>{specialtyLabels[doctor.specialty]}</small></span>
-      <span className={`presence ${doctor.online ? "online" : ""}`}>{doctor.online ? "在线" : "离线"}</span>
+    {options.length > 0 && <p className="doctor-list-hint">共 {options.length} 位医生；可在下方列表内滚动查看更多。</p>}
+    <div className="doctor-options" role="region" aria-label="医生列表，可滚动" tabIndex={0}>{options.map(doctor => <button type="button" key={doctor.id} className={`doctor-option ${selectedId === doctor.id ? "selected" : ""}`} aria-pressed={selectedId === doctor.id} onClick={() => onSelect(doctor.id)}>
+      <span className="doctor-option-main"><span className="doctor-avatar" aria-hidden="true">{doctor.displayName.slice(0, 1)}</span>
+      <span className="doctor-option-text"><strong>{doctor.displayName}</strong><small>{doctor.email}</small><small>{specialtyLabels[doctor.specialty]}</small></span></span>
+      <span className="doctor-option-meta"><span className={`presence ${doctor.online ? "online" : ""}`}>{doctor.online ? "在线" : "离线"}</span>
       {doctor.specialty === hint.primary && <em>推荐</em>}
-      {grants.some(grant => grant.doctorId === doctor.id) && <em>已授权</em>}
+      {grants.some(grant => grant.doctorId === doctor.id) && <em>已授权</em>}</span>
     </button>)}</div>
     {options.length === 0 && <p className="note">当前筛选下没有医生；可将科室和在线状态切换为“全部”。</p>}
     <div className="doctor-choice-action"><button disabled={busy || !chosen || Boolean(alreadyGranted)} onClick={() => chosen && onGrant(chosen)}>{alreadyGranted ? "已授权此医生" : chosen ? `授权 ${chosen.displayName} 查看此报告` : "先选择一位医生"}</button><small>授权仅限当前报告；离线医生可在之后登录查看消息，若希望尽快得到回复可选择在线医生。</small></div>
