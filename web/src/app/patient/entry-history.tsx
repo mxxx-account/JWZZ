@@ -13,7 +13,7 @@ const contextLabels: Record<string, string> = {
   FASTING: "空腹实验室血脂", NON_FASTING: "非空腹实验室血脂",
 };
 
-export function EntryHistory({ refreshKey, onGenerated }: { refreshKey: number; onGenerated: () => Promise<void> }) {
+export function EntryHistory({ refreshKey, onGenerated }: { refreshKey: number; onGenerated: (reportId: number) => Promise<void> }) {
   const [entries, setEntries] = useState<StoredIndicator[][]>([]);
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
@@ -29,7 +29,7 @@ export function EntryHistory({ refreshKey, onGenerated }: { refreshKey: number; 
     setBusy(entryId); setMessage("");
     try {
       const report = await api<Report>("/api/reports", "POST", { entryId });
-      await onGenerated();
+      await onGenerated(report.id);
       setMessage(`报告 #${report.id} 已生成；重复点击会返回同一份报告。`);
     } catch (error) { setMessage(error instanceof Error ? error.message : "生成失败。"); }
     finally { setBusy(""); }

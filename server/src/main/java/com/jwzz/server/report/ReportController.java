@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jwzz.server.auth.UserStore;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -39,6 +42,32 @@ public class ReportController {
         UserStore.User user = current(principal);
         if (!user.role().equals("USER")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         return reports.ownedBy(user.id()).stream().map(this::view).toList();
+    }
+
+    @GetMapping("/reports/archive")
+    public ReportStore.Page archive(@RequestParam(defaultValue = "0") int page,
+                                    @RequestParam(defaultValue = "12") int size,
+                                    @RequestParam(defaultValue = "NEWEST") String sort,
+                                    @RequestParam(required = false) String category,
+                                    @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+                                    @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+                                    @RequestParam(required = false) Long reportId, Principal principal) {
+        UserStore.User user = current(principal);
+        if (!user.role().equals("USER")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (page < 0 || page > 100000 || size < 1 || size > 50 ||
+            !List.of("NEWEST", "OLDEST").contains(sort) ||
+            (category != null && !List.of("BP", "GLUCOSE", "LIPID").contains(category)) ||
+            (from != null && to != null && from.isAfter(to)) || (reportId != null && reportId < 1))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid archive filter");
+        return reports.archive(user.id(), category, from == null ? null : from.atStartOfDay(),
+            to == null ? null : to.plusDays(1).atStartOfDay(), reportId, sort.equals("OLDEST"), page, size);
+    }
+
+    @GetMapping("/reports/context")
+    public List<ReportView> reportContext(Principal principal) {
+        UserStore.User user = current(principal);
+        if (!user.role().equals("USER")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        return reports.latestByCategory(user.id()).stream().map(this::view).toList();
     }
 
     @PostMapping("/reports")

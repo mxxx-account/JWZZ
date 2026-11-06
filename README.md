@@ -16,6 +16,7 @@
 
 近期登录、医生授权首页与统一导航的排查见[问题记录](docs/auth-doctor-home-fixes.md)。
 医生首页“待咨询→接受→进入消息”的当前流程见[验收记录](docs/doctor-pending-acceptance.md)。
+用户首页侧栏工作区、历史报告筛选和分页见[验收说明](docs/patient-workspace-acceptance.md)。
 
 ## 旧模型原型
 
