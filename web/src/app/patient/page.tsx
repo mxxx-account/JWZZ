@@ -76,14 +76,14 @@ export default function PatientPage() {
     <TrendPanel refreshKey={indicatorRefreshKey} />
     <section className="workspace-panel report-section" aria-labelledby="report-section-title">
       <h2 id="report-section-title">我的报告与授权</h2>
-      <p className="note">报告固定生成时的指标和规则版本。只有你明确授权后，医生演示账号才能查看。</p>
+      <p className="note">报告固定生成时的指标和规则版本。只有你明确授权后，对应医生账号才能查看。</p>
       {message && <p role="status" className="notice">{message}</p>}
       {reports.length === 0 && <p className="notice">还没有报告。请先录入指标，再在“最近录入”中生成报告。</p>}
       <div className="report-list">{reports.map(report => <article key={report.id}>
       <div className="report-heading"><h2>{report.content.title ?? `报告 #${report.id}`}</h2><small>#{report.id} · {new Date(report.createdAt).toLocaleString("zh-CN")}</small></div>
       <ReportContent report={report} />
       <p className="note">当前授权：{grants[report.id]?.length ? grants[report.id].map(grant => doctors.find(doctor => doctor.id === grant.doctorId)?.displayName ?? grant.doctorEmail).join("、") : "无"}</p>
-      <DoctorChooser report={report} allReports={reports} doctors={doctors} grants={grants[report.id] ?? []} selectedId={selectedDoctors[report.id] ?? null} busy={busy} onSelect={doctorId => setSelectedDoctors(previous => ({...previous, [report.id]: doctorId}))} onGrant={doctor => action(() => api<Grant>(`/api/reports/${report.id}/grants`, "POST", {doctorEmail: doctor.email}), "授权成功，可以向这位医生提交咨询。")}/>
+      <DoctorChooser report={report} allReports={reports} doctors={doctors} grants={grants[report.id] ?? []} selectedId={selectedDoctors[report.id] ?? null} busy={busy} onSelect={doctorId => setSelectedDoctors(previous => ({...previous, [report.id]: doctorId}))} onGrant={doctor => action(() => api<Grant>(`/api/reports/${report.id}/grants`, "POST", {doctorEmail: doctor.email}), "授权成功，可以向这位医生提交咨询。")} onGrantEmail={email => action(async () => { const granted = await api<Grant>(`/api/reports/${report.id}/grants`, "POST", {doctorEmail: email}); setSelectedDoctors(previous => ({ ...previous, [report.id]: granted.doctorId })); }, "授权成功，可以向这位医生提交咨询。")} />
       {grants[report.id]?.map(grant => <button className="secondary" key={grant.doctorId} disabled={busy} onClick={() => action(() => api<void>(`/api/reports/${report.id}/grants/${grant.doctorId}`, "DELETE"), "撤销成功。")}>撤销 {grant.doctorEmail} 的权限</button>)}
       <div className="consultation-area">
         <h3>向医生发起消息</h3><p className="note">仅演示异步消息，不是实时问诊。未填写时将发送“您好，请帮我看看我的指标报告！”。如有胸痛、胸闷等急症不适，请及时线下就医，不要等待聊天回复。</p>

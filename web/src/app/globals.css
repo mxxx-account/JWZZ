@@ -88,6 +88,8 @@ input[aria-invalid="true"] { border-color: #b42318; background: #fff8f6; }
 .doctor-filters { display: flex; gap: 7px; flex-wrap: wrap; margin: 16px 0; }
 .doctor-filters button { padding: 8px 12px; background: #eaf1f2; color: #28545b; }
 .doctor-filters .active { background: #126a69; color: #fff; }
+.doctor-presence-filter { display: grid; gap: 6px; max-width: 250px; margin: -4px 0 16px; font-weight: 700; }
+.doctor-presence-filter select { width: 100%; padding: 9px 11px; border: 1px solid #c8d8de; border-radius: 8px; background: #fff; color: #173044; }
 .doctor-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
 .doctor-option { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; text-align: left; padding: 12px; background: #f8fbfc; color: #173044; border: 1px solid #dce7ed; }
 .doctor-option.selected { border: 2px solid #126a69; background: #eef8f6; }
@@ -98,6 +100,11 @@ input[aria-invalid="true"] { border-color: #b42318; background: #fff8f6; }
 .presence { margin-left: auto; font-size: 12px; color: #697e88; }
 .presence.online { color: #07825d; }
 .doctor-choice-action { display: flex; gap: 12px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+.doctor-email-grant { display: grid; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #dce7ed; }
+.doctor-email-grant label { font-weight: 700; }
+.doctor-email-grant div { display: flex; gap: 8px; flex-wrap: wrap; }
+.doctor-email-grant input { flex: 1 1 240px; min-width: 0; padding: 10px 12px; border: 1px solid #c8d8de; border-radius: 8px; }
+.doctor-email-grant small { color: #526978; }
 button:disabled { opacity: .55; cursor: not-allowed; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .chat-page { min-height: 100vh; background: #eaf5f6; }

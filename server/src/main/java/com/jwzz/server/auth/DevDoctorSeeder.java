@@ -16,11 +16,11 @@ public class DevDoctorSeeder {
             @Value("${demo.doctor.password:}") String password) {
         return args -> {
             if (email.isBlank() || password.isBlank()) return;
-            seed(users, directory, encoder, email, password, "全科演示医生", "GENERAL");
+            seed(users, directory, encoder, email, password, "张明医生（演示）", "GENERAL");
             seed(users, directory, encoder, "doctor.cardiology@jwzz.local", password,
-                "心血管演示医生", "CARDIOLOGY");
+                "李华医生（演示）", "CARDIOLOGY");
             seed(users, directory, encoder, "doctor.endocrinology@jwzz.local", password,
-                "内分泌演示医生", "ENDOCRINOLOGY");
+                "王宁医生（演示）", "ENDOCRINOLOGY");
         };
     }
 
