@@ -129,7 +129,7 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
           <div className="chat-compose">{role === "DOCTOR" && current.status === "OPEN" && <button className="chat-claim" disabled={busy} onClick={claim}>接受咨询并开始回复</button>}
             <textarea aria-label="输入消息" maxLength={2000} value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} disabled={!current.canSend || busy} placeholder={current.canSend ? "输入消息… Enter 发送，Shift+Enter 换行" : role === "DOCTOR" ? "请先接单后回复" : "报告授权已撤销，暂不能继续发送"}/>
             <div className="chat-compose-foot"><small>异步消息 · 不保证医生即时回复</small><button disabled={busy || !current.canSend || !draft.trim()} onClick={send}>发送</button></div>
-          </div></> : <div className="chat-placeholder"><span>✉</span><h2>选择一个会话</h2><p>{role === "USER" ? "到工作台的报告板块可以选择医生并发起咨询。" : "用户提交咨询后，会话会出现在左侧。"}</p><Link href={dashboard}>返回工作台</Link></div>}
+          </div></> : <div className="chat-placeholder"><span>✉</span><h2>选择一个会话</h2><p>{role === "USER" ? "到首页的报告板块可以选择医生并发起咨询。" : "用户提交咨询后，会话会出现在左侧。"}</p><Link href={dashboard}>返回首页</Link></div>}
       </section>
     </div>
     {notice && <p className="chat-toast" role="status">{notice}<button onClick={() => setNotice("")} aria-label="关闭提示">×</button></p>}
