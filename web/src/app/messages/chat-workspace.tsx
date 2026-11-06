@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { AppNav } from "../app-nav";
 import { useRouter } from "next/navigation";
 import { api, type Conversation, type ConversationDetail, type CurrentUser } from "@/lib/api";
 import { specialtyLabels } from "@/lib/specialty";
@@ -110,7 +111,7 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
   const dashboard = role === "USER" ? "/patient" : "/doctor";
 
   return <main className="chat-page">
-    <header className="chat-nav"><Link className="chat-brand" href={dashboard}>见微知著</Link><span>消息</span><Link href={dashboard}>返回工作台</Link><button onClick={async () => { await api<void>("/api/auth/logout", "POST"); router.push("/"); }}>退出登录</button></header>
+    <AppNav role={role} active="messages" />
     <div className="chat-frame">
       <aside className="chat-sidebar">
         <div className="chat-sidebar-head"><h1>消息</h1><span>{items.reduce((sum, item) => sum + item.unreadCount, 0)} 条未读</span></div>

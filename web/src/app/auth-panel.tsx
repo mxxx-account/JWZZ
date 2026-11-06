@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { api, login, type CurrentUser } from "@/lib/api";
 
 export function AuthPanel() {
-  const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [role, setRole] = useState<"USER" | "DOCTOR">("USER");
+  const [specialty, setSpecialty] = useState("GENERAL");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -17,10 +18,14 @@ export function AuthPanel() {
     setMessage("");
     setBusy(true);
     try {
-      if (mode === "register") await api<CurrentUser>("/api/auth/register", "POST", { email, password });
+      if (mode === "register") await api<CurrentUser>("/api/auth/register", "POST", { email, name, password, role, specialty: role === "DOCTOR" ? specialty : null });
       await login(email, password);
       const user = await api<CurrentUser>("/api/auth/me");
-      router.push(user.role === "DOCTOR" ? "/doctor" : "/patient");
+      if (user.role !== role) {
+        await api<void>("/api/auth/logout", "POST");
+        throw new Error("所选身份与账号身份不一致，请切换后重试。");
+      }
+      window.location.replace(user.role === "DOCTOR" ? "/doctor" : "/patient");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "操作失败，请重试。");
     } finally {
@@ -31,14 +36,17 @@ export function AuthPanel() {
   return <section className="auth-card">
     <div className="tabs">
       <button type="button" className={mode === "login" ? "selected" : ""} onClick={() => setMode("login")}>登录</button>
-      <button type="button" className={mode === "register" ? "selected" : ""} onClick={() => setMode("register")}>注册用户</button>
+      <button type="button" className={mode === "register" ? "selected" : ""} onClick={() => setMode("register")}>注册</button>
     </div>
     <form onSubmit={submit}>
+      <label>身份<select value={role} onChange={event => setRole(event.target.value as "USER" | "DOCTOR")}><option value="USER">用户</option><option value="DOCTOR">医生</option></select></label>
       <label>邮箱<input type="email" required autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} /></label>
+      {mode === "register" && <label>姓名<input required maxLength={80} autoComplete="name" value={name} onChange={event => setName(event.target.value)} /></label>}
+      {mode === "register" && role === "DOCTOR" && <label>科室<select value={specialty} onChange={event => setSpecialty(event.target.value)}><option value="GENERAL">全科</option><option value="CARDIOLOGY">心血管内科</option><option value="ENDOCRINOLOGY">内分泌科</option></select></label>}
       <label>密码<input type="password" required minLength={mode === "register" ? 12 : undefined} autoComplete={mode === "register" ? "new-password" : "current-password"} value={password} onChange={event => setPassword(event.target.value)} /></label>
       <button type="submit" disabled={busy}>{busy ? "处理中…" : mode === "register" ? "注册并登录" : "登录"}</button>
       {message && <p role="alert" className="error">{message}</p>}
     </form>
-    <p className="note">医生演示账号由本地开发环境创建，不开放自行注册。新用户密码至少 12 位。</p>
+    <p className="note">密码至少 12 位。医生自行注册目前仅供本地项目演示，所选身份不代表已核验执业资质；请勿输入真实患者资料。</p>
   </section>;
 }

@@ -6,10 +6,10 @@
 |---|---|---|---|
 | GET `/health` | 公开 | 无 | `200 {status:"ok"}`；只表示进程可响应，不代表所有依赖健康 |
 | GET `/auth/csrf` | 公开 | 无 | `200 {token}` |
-| POST `/auth/register` | 公开 | `{email,password}`，密码 12–128 字 | `201` 用户信息；不发送邮件 |
+| POST `/auth/register` | 公开 | `{email,name,password,role,specialty?}`；医生须选三科之一，且仅开发配置允许自行注册 | `201` 用户信息；不发送邮件、不核验医生资格 |
 | POST `/auth/login` | 公开 | 表单 `email,password` | `200` 并设置会话 Cookie |
 | POST `/auth/logout` | 已登录 | 无 | `204` |
-| GET `/auth/me` | 已登录 | 无 | `200 {id,email,role}` |
+| GET `/auth/me` | 已登录 | 无 | `200 {id,email,role,name}` |
 | GET `/public/indicators` | 公开 | 无 | `200` 八项指标说明，版本化公共缓存 |
 | POST `/indicators` | 用户 | `{category,measuredAt,context,ageYears,pregnant,values}` | `201 {entryId,values,rulesStatus,draftInterpretations}` |
 | GET `/indicators` | 用户 | 无 | `200` 本人最近 100 条指标值 |

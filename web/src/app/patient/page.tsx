@@ -9,6 +9,7 @@ import { EntryHistory } from "./entry-history";
 import { TrendPanel } from "./trend-panel";
 import { ReportContent } from "../report-content";
 import { DoctorChooser } from "./doctor-chooser";
+import { AppNav } from "../app-nav";
 
 export default function PatientPage() {
   const router = useRouter();
@@ -67,10 +68,9 @@ export default function PatientPage() {
     finally { setBusy(false); }
   }
 
-  return <main className="shell dashboard">
-    <nav><Link href="/">见微知著</Link><span>用户工作台</span><Link href="/patient/messages">消息</Link><button onClick={async () => { await api<void>("/api/auth/logout", "POST"); router.push("/"); }}>退出登录</button></nav>
-    <p className="eyebrow">已登录：{user?.email ?? "加载中…"}</p>
-    <h1>指标与报告工作台</h1>
+  return <><AppNav role="USER" active="home" /><main className="shell dashboard">
+    <p className="eyebrow">已登录：{user?.name || user?.email || "加载中…"} · {user?.email}</p>
+    <h1>指标与报告首页</h1>
     <IndicatorPanel onSaved={() => setIndicatorRefreshKey(value => value + 1)} />
     <EntryHistory refreshKey={indicatorRefreshKey} onGenerated={refresh} />
     <TrendPanel refreshKey={indicatorRefreshKey} />
@@ -93,5 +93,5 @@ export default function PatientPage() {
       </div>
       </article>)}</div>
     </section>
-  </main>;
+  </main></>;
 }

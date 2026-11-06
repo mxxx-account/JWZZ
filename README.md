@@ -14,6 +14,8 @@
 
 当前 Web 平台的[架构图](docs/architecture.md)、[数据库设计图](docs/database-design.md)、[接口文档](docs/api-reference.md)、[测试与压测报告](docs/test-report.md)、[Docker Compose 验收说明](docs/compose-validation.md)、[技术难点与取舍](docs/technical-tradeoffs.md)及[演示脚本](docs/demo-script.md)已单独整理。
 
+近期登录、医生授权首页与统一导航的排查见[问题记录](docs/auth-doctor-home-fixes.md)。
+
 ## 旧模型原型
 
 本仓库先完成可复现的机器学习模型，再接入 Electron 桌面客户端。

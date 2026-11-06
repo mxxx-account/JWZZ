@@ -26,7 +26,7 @@ function Check($response, [int]$expected, [string]$label) {
     Write-Output "PASS $label"
 }
 
-Check (PostJson '/api/auth/register' $user @{email=$email;password=$password}) 201 'register user'
+Check (PostJson '/api/auth/register' $user @{email=$email;password=$password;name='消息测试用户';role='USER'}) 201 'register user'
 Login $user $email $password
 Login $general $generalEmail $DoctorPassword
 Login $cardiology 'doctor.cardiology@jwzz.local' $DoctorPassword

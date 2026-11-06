@@ -22,6 +22,8 @@ input { width: 100%; border: 1px solid #a9c1ca; border-radius: 8px; padding: 11p
 .tabs .selected { background: #126a69; color: white; }
 .error { color: #b42318; }
 .dashboard { padding-top: 34px; }
+.app-nav { position: sticky; top: 0; z-index: 30; }
+.app-nav a[aria-current="page"] { color: #69e2d9; }
 nav { display: flex; gap: 24px; align-items: center; border-bottom: 1px solid #dce7ed; padding-bottom: 20px; }
 nav a { color: #126a69; font-weight: 800; text-decoration: none; }
 nav button { margin-left: auto; background: #e7f0f1; color: #126a69; }

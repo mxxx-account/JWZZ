@@ -1,6 +1,6 @@
 # Docker Compose 全新环境验收
 
-`compose.full.yaml` 与原有 `compose.yaml` 分开：前者包含 MySQL、Redis、Spring Boot、Next.js 四服务，用 `jwzz-fresh` 项目名与自己的 MySQL 卷验证“空库→Flyway V1–V5→可用页面”；本机既有 MySQL/Redis 端口不映射、不覆盖。前后端映射在 `127.0.0.1:8081` 和 `127.0.0.1:3001`。Compose 文件中的默认密码仅供本机演示，不能用于公网部署。
+`compose.full.yaml` 与原有 `compose.yaml` 分开：前者包含 MySQL、Redis、Spring Boot、Next.js 四服务，用 `jwzz-fresh` 项目名与自己的 MySQL 卷验证“空库→Flyway V1–V6→可用页面”；本机既有 MySQL/Redis 端口不映射、不覆盖。前后端映射在 `127.0.0.1:8081` 和 `127.0.0.1:3001`。Compose 文件中的默认密码仅供本机演示，不能用于公网部署。
 
 ## 常规命令
 
@@ -21,7 +21,7 @@ wsl -d Ubuntu -u root -- docker compose -f '/mnt/d/codex++/project/见微知著/
 wsl -d Ubuntu -u root -- docker compose -f '/mnt/d/codex++/project/见微知著/compose.full.yaml' -p jwzz-fresh ps
 ```
 
-启动后访问 `http://localhost:3001`、`http://localhost:8081/api/health`；查看后端日志确认 Flyway 迁移到 V5。演示医生密码默认 `ChangeThisDemoPassword123!`，也可在运行 Compose 的环境设置 `JWZZ_COMPOSE_DOCTOR_PASSWORD` 覆盖。独立环境的消息 API 验收：
+启动后访问 `http://localhost:3001`、`http://localhost:8081/api/health`；查看后端日志确认 Flyway 迁移到 V6。演示医生密码默认 `ChangeThisDemoPassword123!`，也可在运行 Compose 的环境设置 `JWZZ_COMPOSE_DOCTOR_PASSWORD` 覆盖。独立环境的消息 API 验收：
 
 ```powershell
 ./scripts/verify_messages.ps1 -BaseUrl 'http://127.0.0.1:8081' -DoctorPassword 'ChangeThisDemoPassword123!'

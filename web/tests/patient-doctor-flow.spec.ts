@@ -9,11 +9,15 @@ test("患者录入、生成报告、授权咨询，医生接单回复，撤销�
 
   await page.goto("/");
   await page.waitForLoadState("networkidle");
-  await page.getByRole("button", { name: "注册用户" }).click();
+  await page.getByRole("button", { name: "注册", exact: true }).click();
   await expect(page.getByRole("button", { name: "注册并登录" })).toBeVisible();
   await page.getByLabel("邮箱").fill(email);
+  await page.getByLabel("姓名").fill("浏览器测试用户");
   await page.getByLabel("密码").fill(password);
   await page.getByRole("button", { name: "注册并登录" }).click();
+  await expect(page).toHaveURL(/\/patient$/);
+  await expect(page.getByRole("link", { name: "首页" })).toHaveAttribute("aria-current", "page");
+  await page.getByRole("link", { name: "见微知著" }).click();
   await expect(page).toHaveURL(/\/patient$/);
 
   await page.getByLabel("指标分类").selectOption("BP");
@@ -27,6 +31,8 @@ test("患者录入、生成报告、授权咨询，医生接单回复，撤销�
   await expect(page.locator(".report-section .report-list > article")).toHaveCount(1);
 
   const report = page.locator(".report-section .report-list > article").first();
+  const reportId = (await report.locator(".report-heading small").textContent())?.match(/#(\d+)/)?.[1];
+  expect(reportId).toBeTruthy();
   await report.getByLabel("医生在线状态").selectOption("OFFLINE");
   await report.getByLabel("医生在线状态").selectOption("ALL");
   await report.locator(".doctor-option").filter({ hasText: "李华医生（演示）" }).click();
@@ -45,9 +51,13 @@ test("患者录入、生成报告、授权咨询，医生接单回复，撤销�
   const doctor = await doctorContext.newPage();
   try {
     await doctor.goto("/");
+    await doctor.getByLabel("身份").selectOption("DOCTOR");
     await doctor.getByLabel("邮箱").fill("doctor.cardiology@jwzz.local");
     await doctor.getByLabel("密码").fill(doctorPassword!);
     await doctor.getByRole("button", { name: "登录", exact: true }).last().click();
+    await expect(doctor).toHaveURL(/\/doctor$/);
+    await expect(doctor.locator(`.report-list > article[data-report-id="${reportId}"]`)).toBeVisible();
+    await doctor.getByRole("link", { name: "见微知著" }).click();
     await expect(doctor).toHaveURL(/\/doctor$/);
     await doctor.goto(`/doctor/messages?conversation=${conversationId}`);
     await expect(doctor.locator(".chat-bubble").first()).toHaveText("您好，请帮我看看我的指标报告！");
@@ -75,5 +85,67 @@ test("患者录入、生成报告、授权咨询，医生接单回复，撤销�
     await expect(doctor.locator(".chat-conversation").filter({ hasText: email })).toHaveCount(0, { timeout: 15_000 });
   } finally {
     if (doctorContext.browser()?.isConnected()) await doctorContext.close();
+  }
+});
+
+test("医生填写姓名和科室注册，单次登录后进入医生首页", async ({ page }) => {
+  const email = `e2e-doctor-${Date.now()}@example.invalid`;
+  const password = "DoctorFlowTest123!";
+  await page.goto("/");
+  await page.getByRole("button", { name: "注册", exact: true }).click();
+  await page.getByLabel("身份").selectOption("DOCTOR");
+  await page.getByLabel("邮箱").fill(email);
+  await page.getByLabel("姓名").fill("测试医生");
+  await page.getByLabel("科室").selectOption("GENERAL");
+  await page.getByLabel("密码").fill(password);
+  await page.getByRole("button", { name: "注册并登录" }).click();
+  await expect(page).toHaveURL(/\/doctor$/);
+  await expect(page.getByText(`测试医生 · ${email}`)).toBeVisible();
+  await page.getByRole("button", { name: "退出登录" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.route("**/api/doctor/presence", route => route.fulfill({ status: 503, body: "temporary failure" }));
+  await page.getByLabel("身份").selectOption("DOCTOR");
+  await page.getByLabel("邮箱").fill(email);
+  await page.getByLabel("密码").fill(password);
+  await page.getByRole("button", { name: "登录", exact: true }).last().click();
+  await expect(page).toHaveURL(/\/doctor$/);
+});
+
+test("医生首页已打开时，新授权报告自动出现", async ({ page, browser }) => {
+  const doctorPassword = process.env.DEMO_DOCTOR_PASSWORD;
+  test.skip(!doctorPassword, "先加载本地医生演示密码");
+  const doctorContext = await browser.newContext();
+  const doctor = await doctorContext.newPage();
+  try {
+    await doctor.goto("/");
+    await doctor.getByLabel("身份").selectOption("DOCTOR");
+    await doctor.getByLabel("邮箱").fill("doctor.cardiology@jwzz.local");
+    await doctor.getByLabel("密码").fill(doctorPassword!);
+    await doctor.getByRole("button", { name: "登录", exact: true }).last().click();
+    await expect(doctor).toHaveURL(/\/doctor$/);
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "注册", exact: true }).click();
+    await page.getByLabel("邮箱").fill(`grant-live-${Date.now()}@example.invalid`);
+    await page.getByLabel("姓名").fill("授权测试用户");
+    await page.getByLabel("密码").fill("GrantLiveTest123!");
+    await page.getByRole("button", { name: "注册并登录" }).click();
+    await expect(page).toHaveURL(/\/patient$/);
+    await page.getByLabel("指标分类").selectOption("BP");
+    await page.locator(".value-field").filter({ hasText: "收缩压" }).locator("input").fill("130");
+    await page.locator(".value-field").filter({ hasText: "舒张压" }).locator("input").fill("80");
+    await page.getByRole("button", { name: "保存指标并查看研发预览" }).click();
+    await page.getByRole("button", { name: "生成／查看这次的报告" }).first().click();
+    const report = page.locator(".report-section .report-list > article").first();
+    await expect(report).toBeVisible();
+    const reportId = (await report.locator(".report-heading small").textContent())?.match(/#(\d+)/)?.[1];
+    expect(reportId).toBeTruthy();
+    await expect(doctor.locator(`.report-list > article[data-report-id="${reportId}"]`)).toHaveCount(0);
+    await report.getByLabel("通过医生账号（邮箱）授权").fill("doctor.cardiology@jwzz.local");
+    await report.getByRole("button", { name: "授权此医生", exact: true }).click();
+    await expect(report.getByText("当前授权：李华医生（演示）")).toBeVisible();
+    await expect(doctor.locator(`.report-list > article[data-report-id="${reportId}"]`)).toBeVisible({ timeout: 20_000 });
+  } finally {
+    await doctorContext.close();
   }
 });

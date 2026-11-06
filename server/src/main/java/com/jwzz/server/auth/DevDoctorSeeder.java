@@ -29,6 +29,9 @@ public class DevDoctorSeeder {
         String normalized = email.toLowerCase(java.util.Locale.ROOT);
         if (users.findByEmail(normalized).isEmpty()) users.create(normalized, encoder.encode(password), "DOCTOR");
         users.findByEmail(normalized).filter(user -> user.role().equals("DOCTOR"))
-            .ifPresent(user -> directory.upsert(user.id(), displayName, specialty));
+            .ifPresent(user -> {
+                users.setNameIfBlank(user.id(), displayName);
+                directory.upsert(user.id(), displayName, specialty);
+            });
     }
 }

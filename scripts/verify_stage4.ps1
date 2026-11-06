@@ -20,7 +20,7 @@ function Login($session, $address, $secret) {
     AssertStatus $response 200 'login'
 }
 function Register($session, $address) {
-    $response = Invoke-WebRequest "$base/api/auth/register" -Method Post -WebSession $session -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=(Token $session)} -Body (@{email=$address;password=$password} | ConvertTo-Json) -SkipHttpErrorCheck
+    $response = Invoke-WebRequest "$base/api/auth/register" -Method Post -WebSession $session -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=(Token $session)} -Body (@{email=$address;password=$password;name='测试用户';role='USER'} | ConvertTo-Json) -SkipHttpErrorCheck
     AssertStatus $response 201 'registration'
     Login $session $address $password
 }

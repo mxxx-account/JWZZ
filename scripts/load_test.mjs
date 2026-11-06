@@ -35,7 +35,7 @@ const tokenResponse = await request("/api/auth/csrf");
 csrf = tokenResponse.token;
 const email = `load-${Date.now()}@example.invalid`;
 const password = "BoundedLoadTest123!";
-await request("/api/auth/register", "POST", { email, password });
+await request("/api/auth/register", "POST", { email, password, name: "压测用户", role: "USER" });
 const login = await fetch(`${base}/api/auth/login`, {
   method: "POST", headers: { Cookie: cookieHeader(), "X-XSRF-TOKEN": csrf, "Content-Type": "application/x-www-form-urlencoded" },
   body: new URLSearchParams({ email, password }),

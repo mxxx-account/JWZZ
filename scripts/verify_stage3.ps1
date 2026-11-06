@@ -12,7 +12,7 @@ $password = 'StageThreeTest123!'
 function Token($webSession) { (Invoke-RestMethod "$base/api/auth/csrf" -WebSession $webSession).token }
 function RegisterAndLogin($webSession, $address) {
     $token = Token $webSession
-    $registered = Invoke-WebRequest "$base/api/auth/register" -Method Post -WebSession $webSession -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=$token} -Body (@{email=$address;password=$password} | ConvertTo-Json) -SkipHttpErrorCheck
+    $registered = Invoke-WebRequest "$base/api/auth/register" -Method Post -WebSession $webSession -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=$token} -Body (@{email=$address;password=$password;name='测试用户';role='USER'} | ConvertTo-Json) -SkipHttpErrorCheck
     if ($registered.StatusCode -ne 201) { throw "Registration failed: $($registered.StatusCode)" }
     $token = Token $webSession
     $login = Invoke-WebRequest "$base/api/auth/login" -Method Post -WebSession $webSession -ContentType 'application/x-www-form-urlencoded' -Headers @{'X-XSRF-TOKEN'=$token} -Body @{email=$address;password=$password} -SkipHttpErrorCheck

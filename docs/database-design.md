@@ -1,4 +1,4 @@
-# 数据库设计（Flyway V1–V5）
+# 数据库设计（Flyway V1–V6）
 
 MySQL `jwzz` 是当前 Web 平台的业务数据库。下图中的外键、唯一约束以迁移 SQL 为准；状态值由应用约定，尚未用数据库 `CHECK` 约束。
 
@@ -17,6 +17,7 @@ erDiagram
   app_user {
     BIGINT id PK
     VARCHAR email UK
+    VARCHAR display_name
     VARCHAR password_hash
     VARCHAR role
   }

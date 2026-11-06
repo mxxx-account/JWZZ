@@ -1,4 +1,3 @@
-import { ServiceStatus } from "./service-status";
 import { AuthPanel } from "./auth-panel";
 
 export default function Home() {
@@ -9,7 +8,6 @@ export default function Home() {
         <h1>见微知著</h1>
         <p className="lead">体检指标解读与健康风险管理平台</p>
         <p>现已可以录入血压、血糖和血脂指标，生成版本化的记录快照，并查看同类指标趋势。规则解读仍待临床审核。</p>
-        <ServiceStatus />
         <AuthPanel />
         <section className="cards">
           <article><h2>记录指标</h2><p>保存测量时间、单位和测量条件，让每条数据都有上下文。</p></article>

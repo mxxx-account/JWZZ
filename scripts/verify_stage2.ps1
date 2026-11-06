@@ -26,7 +26,7 @@ $anonymous = Invoke-WebRequest "$base/api/reports" -SkipHttpErrorCheck
 AssertStatus $anonymous.StatusCode 401 'anonymous reports denied'
 
 $token = Csrf $userSession
-$register = Invoke-WebRequest "$base/api/auth/register" -Method Post -WebSession $userSession -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=$token} -Body (@{email=$userEmail;password=$userPassword} | ConvertTo-Json) -SkipHttpErrorCheck
+$register = Invoke-WebRequest "$base/api/auth/register" -Method Post -WebSession $userSession -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=$token} -Body (@{email=$userEmail;password=$userPassword;name='测试用户';role='USER'} | ConvertTo-Json) -SkipHttpErrorCheck
 AssertStatus $register.StatusCode 201 'user registration'
 Login $userSession $userEmail $userPassword
 $me = Invoke-RestMethod "$base/api/auth/me" -WebSession $userSession
@@ -70,7 +70,7 @@ AssertStatus $doctorCreate.StatusCode 403 'doctor cannot create patient report'
 $otherSession = [Microsoft.PowerShell.Commands.WebRequestSession]::new()
 $otherEmail = "acceptance-$([guid]::NewGuid().ToString('N'))@example.invalid"
 $otherToken = Csrf $otherSession
-$otherRegister = Invoke-WebRequest "$base/api/auth/register" -Method Post -WebSession $otherSession -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=$otherToken} -Body (@{email=$otherEmail;password=$userPassword} | ConvertTo-Json) -SkipHttpErrorCheck
+$otherRegister = Invoke-WebRequest "$base/api/auth/register" -Method Post -WebSession $otherSession -ContentType 'application/json' -Headers @{'X-XSRF-TOKEN'=$otherToken} -Body (@{email=$otherEmail;password=$userPassword;name='其他测试用户';role='USER'} | ConvertTo-Json) -SkipHttpErrorCheck
 AssertStatus $otherRegister.StatusCode 201 'second user registration'
 Login $otherSession $otherEmail $userPassword
 $otherRead = Invoke-WebRequest "$base/api/reports/$reportId" -WebSession $otherSession -SkipHttpErrorCheck

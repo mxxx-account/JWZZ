@@ -24,12 +24,12 @@ $catalog = Invoke-RestMethod "$base/api/public/indicators"
 if ($catalog.items.Count -ne 8 -or $catalog.version -ne 'catalog-2026-01') { throw 'Public catalog mismatch' }
 Write-Output 'PASS public indicator catalog'
 
-$registered = PostJson '/api/auth/register' $user @{email=$email;password=$password}
+$registered = PostJson '/api/auth/register' $user @{email=$email;password=$password;name='测试用户';role='USER'}
 AssertStatus $registered 201 'register user'
 Login $user $email $password
 Login $doctor $env:DEMO_DOCTOR_EMAIL $env:DEMO_DOCTOR_PASSWORD
 $otherEmail = "stage5-$([guid]::NewGuid().ToString('N'))@example.invalid"
-AssertStatus (PostJson '/api/auth/register' $other @{email=$otherEmail;password=$password}) 201 'register other user'
+AssertStatus (PostJson '/api/auth/register' $other @{email=$otherEmail;password=$password;name='其他测试用户';role='USER'}) 201 'register other user'
 Login $other $otherEmail $password
 
 $measured = (Get-Date).AddMinutes(-5).ToString('yyyy-MM-ddTHH:mm:ss')

@@ -12,7 +12,7 @@ flowchart LR
   A --> R[研发规则与版本化报告]
   A --> G[报告授权与定向咨询]
   A --> M[异步消息与在线心跳]
-  I & R & G & M --> SQL[(MySQL 8 / Flyway V1-V5)]
+  I & R & G & M --> SQL[(MySQL 8 / Flyway V1-V6)]
   A -->|公开目录缓存；写接口限流| REDIS[(Redis 7；可选回退)]
 ```
 

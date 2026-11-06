@@ -1,4 +1,4 @@
-export type CurrentUser = { id: number; email: string; role: "USER" | "DOCTOR" };
+export type CurrentUser = { id: number; email: string; role: "USER" | "DOCTOR"; name: string };
 export type Report = {
   id: number;
   ownerId: number;
