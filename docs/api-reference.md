@@ -24,6 +24,7 @@
 | POST `/reports/{id}/grants` | 报告所有者 | `{doctorEmail}` | `200 {doctorId,doctorEmail}`；重授权恢复 |
 | DELETE `/reports/{id}/grants/{doctorId}` | 报告所有者 | 无 | `204` 软撤销 |
 | GET `/doctors` | 用户 | 无 | `200` 三科演示医生及近期页面活跃状态 |
+| GET `/pharmacies/nearby` | 用户 | `?lat=30.5928&lon=114.3055`，WGS84 经纬度 | `200 {source:"OPENSTREETMAP",radiusMeters:5000,pharmacies:[...]}`；最多 30 家、直线距离升序；地图服务异常 502，超限 429 |
 | POST `/doctor/presence` | 医生 | 无 | `204` 更新活跃时间 |
 | GET `/consultations` | 用户 | 无 | `200` 本人最近 100 条咨询 |
 | POST `/consultations` | 用户 | `{reportId,doctorId,question?}`；医生须已获该报告授权 | `201` 咨询；空问题自动填问候语并创建首条消息；每用户每分钟最多 5 次 |
