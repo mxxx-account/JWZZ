@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api/merchant/store")
@@ -26,10 +27,12 @@ public class MerchantStoreController {
 
     private final UserStore users;
     private final MerchantStore stores;
+    private final MerchantCatalogStore catalog;
 
-    public MerchantStoreController(UserStore users, MerchantStore stores) {
+    public MerchantStoreController(UserStore users, MerchantStore stores, MerchantCatalogStore catalog) {
         this.users = users;
         this.stores = stores;
+        this.catalog = catalog;
     }
 
     @GetMapping
@@ -40,11 +43,14 @@ public class MerchantStoreController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Transactional
     public MerchantStore.Store create(@Valid @RequestBody StoreRequest request, Principal principal) {
         long merchantId = merchantId(principal);
         try {
-            return stores.create(merchantId, clean(request.name()), clean(request.description()),
+            var store = stores.create(merchantId, clean(request.name()), clean(request.description()),
                 clean(request.city()), clean(request.address()));
+            catalog.seedStarter(store.id());
+            return store;
         } catch (DuplicateKeyException exception) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Store already exists");
         }

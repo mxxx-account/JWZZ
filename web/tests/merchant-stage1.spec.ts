@@ -27,7 +27,7 @@ test("商家创建与编辑店铺；不同商家相互隔离，用户不能访�
   await page.getByLabel("店铺简介").fill("仅供项目演示");
   await page.getByRole("button", { name: "创建店铺" }).click();
   await expect(page.getByText("店铺已创建，可继续完善资料。")).toBeVisible();
-  await expect(page.getByText("草稿店铺")).toBeVisible();
+  await expect(page.getByText("草稿店铺", { exact: true })).toBeVisible();
   await page.getByLabel("店铺名称").fill("健康用品演示店甲（更新）");
   await page.getByRole("button", { name: "保存店铺资料" }).click();
   await expect(page.getByText("店铺资料已保存。")).toBeVisible();

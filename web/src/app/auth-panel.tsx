@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { api, homeForRole, login, type CurrentUser, type Role } from "@/lib/api";
+import { api, ApiError, homeForRole, login, type CurrentUser, type Role } from "@/lib/api";
 
 export function AuthPanel() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -27,7 +27,11 @@ export function AuthPanel() {
       }
       window.location.replace(homeForRole(user.role));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "操作失败，请重试。");
+      setMessage(mode === "register" && role === "MERCHANT" && error instanceof ApiError && error.status === 400
+        ? "商家注册被后端拒绝：请确认已重启支持商家角色的后端，再检查邮箱、姓名和密码。"
+        : mode === "register" && role === "MERCHANT" && error instanceof ApiError && error.status === 403
+          ? "当前后端未开放商家演示注册，请确认以 dev 配置启动。"
+          : error instanceof Error ? error.message : "操作失败，请重试。");
     } finally {
       setBusy(false);
     }

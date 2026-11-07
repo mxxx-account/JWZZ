@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AppNav } from "../app-nav";
 import { api, ApiError, homeForRole, type CurrentUser, type MerchantStore } from "@/lib/api";
+import { ProductPanel } from "./product-panel";
 
 type StoreForm = { name: string; description: string; city: string; address: string };
 const emptyStore: StoreForm = { name: "", description: "", city: "", address: "" };
@@ -48,10 +49,10 @@ export default function MerchantPage() {
     <p className="eyebrow">商家账号：{user?.name || user?.email || "加载中…"} · {user?.email}</p>
     <h1>商家首页</h1>
     <p className="lead">创建并维护你的演示店铺</p>
-    <p className="note">当前是第一阶段：仅管理店铺资料。商品、库存、订单、模拟支付和商家消息会在后续阶段逐项开发。商家注册和店铺资料不代表真实经营资质已审核。</p>
+    <p className="note">当前是第二阶段：可以管理演示商品与库存；订单、模拟支付和商家消息将在后续阶段开发。商家注册和店铺资料不代表真实经营资质已审核。</p>
     {loading ? <p role="status" className="notice">正在读取店铺资料…</p> : <section className="workspace-panel merchant-store-panel">
       <div className="merchant-panel-heading"><div><p className="pharmacy-kicker">STORE PROFILE</p><h2>{store ? store.name : "创建店铺"}</h2></div><span className="merchant-store-status">{store ? "草稿店铺" : "尚未创建"}</span></div>
-      <p className="note">每个商家账号目前只能创建一家店铺。资料只在商家端显示；商品上架功能上线前，不会出现在用户搜索结果中。</p>
+      <p className="note">每个商家账号目前只能创建一家店铺。草稿店铺和商品仅在商家端显示，尚未接入用户搜索结果。</p>
       <form className="merchant-store-form" onSubmit={save}>
         <label>店铺名称<input required maxLength={80} value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} placeholder="例如：健康用品演示店" /></label>
         <label>所在城市<input required maxLength={80} value={form.city} onChange={event => setForm({ ...form, city: event.target.value })} placeholder="例如：武汉市" /></label>
@@ -62,5 +63,6 @@ export default function MerchantPage() {
       {message && <p role="status" className="notice">{message}</p>}
       {error && <p role="alert" className="error">{error}</p>}
     </section>}
+    {store && <ProductPanel storeId={store.id} />}
   </main></>;
 }
