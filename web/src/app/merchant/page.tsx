@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AppNav } from "../app-nav";
 import { api, ApiError, homeForRole, type CurrentUser, type MerchantStore } from "@/lib/api";
 import { ProductPanel } from "./product-panel";
+import { OrderPanel } from "./order-panel";
 
 type StoreForm = { name: string; description: string; city: string; address: string };
 const emptyStore: StoreForm = { name: "", description: "", city: "", address: "" };
@@ -65,7 +66,7 @@ export default function MerchantPage() {
     <p className="eyebrow">商家账号：{user?.name || user?.email || "加载中…"} · {user?.email}</p>
     <h1>商家首页</h1>
     <p className="lead">创建并维护你的演示店铺</p>
-    <p className="note">当前为教学演示商城：可管理商品、库存与演示营业状态。订单、模拟支付和商家消息仍待开发；商家注册不代表真实经营资质已审核。</p>
+    <p className="note">当前为教学演示商城：可管理商品、库存、演示营业状态与订单。支付仅为模拟，商家消息仍待开发；商家注册不代表真实经营资质已审核。</p>
     {loading ? <p role="status" className="notice">正在读取店铺资料…</p> : <section className="workspace-panel merchant-store-panel">
       <div className="merchant-panel-heading"><div><p className="pharmacy-kicker">STORE PROFILE</p><h2>{store ? store.name : "创建店铺"}</h2></div><span className="merchant-store-status">{store ? store.status === "OPEN" ? "演示营业中" : "草稿店铺" : "尚未创建"}</span></div>
       <p className="note">每个商家账号目前只能创建一家店铺。只有演示营业中、已上架且有库存的商品会出现在用户药店页。</p>
@@ -81,5 +82,6 @@ export default function MerchantPage() {
       {error && <p role="alert" className="error">{error}</p>}
     </section>}
     {store && <ProductPanel storeId={store.id} />}
+    {store && <OrderPanel />}
   </main></>;
 }
