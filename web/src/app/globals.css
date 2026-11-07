@@ -59,7 +59,11 @@ input { width: 100%; border: 1px solid #a9c1ca; border-radius: 8px; padding: 11p
 .merchant-inline-form > div { display: flex; gap: 9px; }
 .merchant-ledger { margin-top: 16px; padding: 14px; border-radius: 10px; background: #f5f8fb; font-size: 13px; }
 .merchant-ledger ul { margin: 8px 0 0; padding-left: 20px; }
+.merchant-open-control { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-top: 22px; padding: 16px; border-radius: 12px; background: #eff8f6; }
+.merchant-open-control p { margin: 0; color: #526978; font-size: 13px; }
+.merchant-open-control button { flex: none; }
 @media (max-width: 720px) { .merchant-add-grid { grid-template-columns: 1fr; } .merchant-product-summary { flex-direction: column; } }
+@media (max-width: 620px) { .merchant-open-control { flex-direction: column; align-items: stretch; } }
 .app-nav { position: sticky; top: 0; z-index: 30; }
 .app-nav a[aria-current="page"] { color: #69e2d9; }
 nav { display: flex; gap: 24px; align-items: center; border-bottom: 1px solid #dce7ed; padding-bottom: 20px; }
@@ -328,3 +332,44 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 @media (max-width: 950px) { .pharmacy-results-layout { grid-template-columns: minmax(0,1fr); } .pharmacy-results-aside { position: static; } .pharmacy-product-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 680px) { .pharmacy-page { padding: 16px 14px 48px; } .pharmacy-hero { display: block; padding: 26px 20px; } .pharmacy-hero-mark { display: none; } .pharmacy-search { margin-top: 23px; min-height: 55px; } .pharmacy-search button { min-width: 72px; padding: 10px; } .pharmacy-location-bar { display: block; padding: 16px; } .pharmacy-location-actions { margin-top: 13px; } .pharmacy-store-list { grid-template-columns: minmax(0,1fr); } .pharmacy-section-heading { display: block; } .pharmacy-section-heading > p { margin-top: 5px; } }
 @media (max-width: 430px) { .pharmacy-product-grid { grid-template-columns: minmax(0,1fr); } .pharmacy-location-actions { align-items: stretch; flex-direction: column; } .pharmacy-location-actions select { width: 100%; } .pharmacy-store-card { gap: 10px; padding: 15px; } .pharmacy-store-avatar { width: 40px; height: 40px; } .chat-nav.app-nav { gap: 9px; padding: 0 12px; } .chat-nav.app-nav .chat-brand { margin-right: 0; font-size: 18px; } .chat-nav.app-nav button { padding: 6px; font-size: 12px; } }
+.shop-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 20px; }
+.shop-toolbar > div { display: flex; gap: 8px; }
+.shop-toolbar button { color: #126a69; background: #e5f0f0; }
+.shop-toolbar button.active { color: #fff; background: #126a69; }
+.shop-toolbar p { margin: 0; color: #607985; font-size: 13px; }
+.shop-filters { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 18px; }
+.shop-filters label { display: grid; gap: 6px; min-width: 175px; color: #526978; font-size: 13px; font-weight: 700; }
+.shop-store-list, .shop-cart-items { display: grid; gap: 16px; }
+.shop-store { padding: 0; overflow: hidden; }
+.shop-store-heading { display: flex; justify-content: space-between; gap: 18px; padding: 18px 22px; background: #eff8f7; }
+.shop-store-heading small { color: #607985; }
+.shop-store-heading h3 { margin: 5px 0; font-size: 22px; }
+.shop-store-heading p { margin: 0; color: #526978; font-size: 13px; }
+.shop-store-heading > span { align-self: start; white-space: nowrap; color: #126a69; font-size: 12px; }
+.shop-offer-list { display: grid; gap: 0; }
+.shop-offer { display: flex; justify-content: space-between; gap: 24px; padding: 20px 22px; border-top: 1px solid #e2eaee; }
+.shop-offer small { color: #607985; }
+.shop-offer h4 { margin: 5px 0; font-size: 19px; }
+.shop-offer p { margin: 4px 0; color: #526978; font-size: 13px; }
+.shop-offer span { color: #0d716e; font-size: 13px; }
+.shop-offer-action { display: grid; justify-items: end; align-content: start; gap: 8px; min-width: 130px; }
+.shop-offer-action strong, .shop-detail > strong { color: #b65a26; font-size: 23px; }
+.shop-offer-action button, .shop-cart-actions button { padding: 8px 12px; font-size: 13px; }
+.shop-offer-action button:nth-of-type(1) { color: #126a69; background: #e5f0f0; }
+.shop-detail { margin-bottom: 18px; border-color: #92c9c2; background: #f7fcfb; }
+.shop-detail h3 { margin: 4px 0; font-size: 26px; }
+.shop-detail-close { float: right; padding: 6px 12px; color: #126a69; background: #e5f0f0; }
+.shop-pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 20px; }
+.shop-pagination button { padding: 8px 14px; }
+.shop-cart-store { font-weight: 800; }
+.shop-cart-item { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px; }
+.shop-cart-item h3 { margin: 0; }
+.shop-cart-item p { margin: 5px 0 0; color: #607985; font-size: 13px; }
+.shop-cart-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.shop-cart-actions span { min-width: 95px; text-align: right; font-weight: 800; }
+.shop-cart-actions button:last-child { color: #9a3c2a; background: #fff0e9; }
+.shop-cart-total { margin-top: 22px; padding: 20px; border-radius: 14px; background: #eff8f7; text-align: right; }
+.shop-cart-total strong { font-size: 22px; }
+.shop-cart-total p { color: #526978; font-size: 13px; }
+@media (max-width: 800px) { .shop-toolbar, .shop-filters, .shop-cart-item { flex-direction: column; align-items: stretch; } .shop-toolbar p { align-self: start; } .shop-offer { gap: 10px; } }
+@media (max-width: 520px) { .shop-store-heading, .shop-offer { flex-direction: column; } .shop-offer-action { display: flex; justify-content: space-between; align-items: center; } .shop-offer-action strong { margin-right: auto; } .shop-cart-total { text-align: left; } }

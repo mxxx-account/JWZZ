@@ -41,4 +41,9 @@ public class MerchantStore {
             """, name, description, city, address, merchantId);
         return changed == 0 ? Optional.empty() : ownedBy(merchantId);
     }
+
+    public Optional<Store> setStatus(long merchantId, String status) {
+        int changed = jdbc.update("UPDATE merchant_store SET status=? WHERE merchant_id=?", status, merchantId);
+        return changed == 0 ? Optional.empty() : ownedBy(merchantId);
+    }
 }

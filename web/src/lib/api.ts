@@ -1,6 +1,9 @@
 export type Role = "USER" | "DOCTOR" | "MERCHANT";
 export type CurrentUser = { id: number; email: string; role: Role; name: string };
-export type MerchantStore = { id: number; merchantId: number; name: string; description: string; city: string; address: string; status: "DRAFT"; createdAt: string; updatedAt: string };
+export type MerchantStore = { id: number; merchantId: number; name: string; description: string; city: string; address: string; status: "DRAFT" | "OPEN"; createdAt: string; updatedAt: string };
+export type ShopOffer = { skuId: number; storeId: number; storeName: string; storeCity: string; storeAddress: string; productName: string; category: string; description: string; priceCents: number; available: number };
+export type ShopPage = { items: ShopOffer[]; total: number; page: number; size: number };
+export type CartItem = { id: number; skuId: number; storeId: number; storeName: string; productName: string; priceCents: number; quantity: number; available: number; purchasable: boolean };
 export type ProductTemplate = { id: number; code: string; name: string; category: string; description: string };
 export type MerchantProduct = { id: number; storeId: number; templateId: number | null; name: string; category: string; description: string; priceCents: number; status: "ON_SHELF" | "OFF_SHELF" | "ARCHIVED"; available: number; reserved: number };
 export type InventoryLedger = { id: number; skuId: number; actorId: number; delta: number; beforeAvailable: number; afterAvailable: number; reason: string; note: string; createdAt: string };

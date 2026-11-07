@@ -24,6 +24,7 @@ public class MerchantStoreController {
                                @Size(max = 500) String description,
                                @NotBlank @Size(max = 80) String city,
                                @NotBlank @Size(max = 200) String address) {}
+    public record StatusRequest(@NotBlank String status) {}
 
     private final UserStore users;
     private final MerchantStore stores;
@@ -61,6 +62,18 @@ public class MerchantStoreController {
         return stores.update(merchantId(principal), clean(request.name()), clean(request.description()),
             clean(request.city()), clean(request.address()))
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Store not created"));
+    }
+
+    @PutMapping("/status")
+    public MerchantStore.Store status(@Valid @RequestBody StatusRequest request, Principal principal) {
+        if (!java.util.Set.of("DRAFT", "OPEN").contains(request.status()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid store status");
+        long merchantId = merchantId(principal);
+        var store = stores.ownedBy(merchantId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Store not created"));
+        if (request.status().equals("OPEN") && !catalog.hasSaleableProducts(store.id()))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "List at least one in-stock product first");
+        return stores.setStatus(merchantId, request.status()).orElseThrow();
     }
 
     private long merchantId(Principal principal) {

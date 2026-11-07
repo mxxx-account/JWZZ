@@ -48,6 +48,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/pharmacies/region").hasRole("USER")
                 .requestMatchers("/api/doctor/**").hasRole("DOCTOR")
                 .requestMatchers("/api/merchant/**").hasRole("MERCHANT")
+                .requestMatchers("/api/shop/**").hasRole("USER")
                 .requestMatchers(HttpMethod.GET, "/api/doctors").hasRole("USER")
                 .requestMatchers("/api/messages/**", "/api/messages").hasAnyRole("USER", "DOCTOR")
                 .requestMatchers("/api/consultations", "/api/consultations/**").hasRole("USER")

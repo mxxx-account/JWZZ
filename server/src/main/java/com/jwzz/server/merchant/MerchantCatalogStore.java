@@ -128,4 +128,12 @@ public class MerchantCatalogStore {
                 rs.getString("reason"), rs.getString("note"), rs.getTimestamp("created_at").toLocalDateTime()),
             storeId, skuId);
     }
+
+    public boolean hasSaleableProducts(long storeId) {
+        Integer count = jdbc.queryForObject("""
+            SELECT COUNT(*) FROM store_sku s JOIN store_inventory i ON i.sku_id=s.id
+            WHERE s.store_id=? AND s.status='ON_SHELF' AND i.available>0
+            """, Integer.class, storeId);
+        return count != null && count > 0;
+    }
 }
