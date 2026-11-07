@@ -103,6 +103,7 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
     <div className="chat-frame">
       <aside className="chat-sidebar">
         <div className="chat-sidebar-head"><h1>消息</h1><span>{items.reduce((sum, item) => sum + item.unreadCount, 0)} 条未读</span></div>
+        {role === "USER" && <p className="shop-chat-switch"><Link href="/patient/shop-messages">查看商家订单消息 →</Link></p>}
         <label className="chat-search"><span className="sr-only">搜索会话</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="搜索联系人、科室或报告" /></label>
         <div className="chat-filters"><button className={!unreadOnly ? "active" : ""} onClick={() => setUnreadOnly(false)}>全部</button><button className={unreadOnly ? "active" : ""} onClick={() => setUnreadOnly(true)}>未读</button></div>
         <div className="chat-conversation-list">{visible.map(item => <button key={item.id} data-conversation-id={item.id} className={`chat-conversation ${activeId === item.id ? "selected" : ""}`} onClick={() => { if (activeId === item.id) void refreshDetail(item.id).catch(error => setNotice(error instanceof Error ? error.message : "无法读取会话。")); else setActiveId(item.id); window.history.replaceState(null, "", `?conversation=${item.id}`); }}>

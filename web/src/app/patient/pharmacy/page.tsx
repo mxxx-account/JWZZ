@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AppNav } from "../../app-nav";
-import { api, ApiError, homeForRole, type CartItem, type CurrentUser, type ShopOffer, type ShopOrder, type ShopOrderDetail, type ShopPage } from "@/lib/api";
+import { api, ApiError, homeForRole, type CartItem, type CurrentUser, type ShopConversationDetail, type ShopOffer, type ShopOrder, type ShopOrderDetail, type ShopPage } from "@/lib/api";
 
 const categories = ["全部", "健康器械", "日常用品", "营养补充"];
 const yuan = (cents: number) => `¥${(cents / 100).toFixed(2)}`;
@@ -122,6 +122,16 @@ export default function PharmacyPage() {
     finally { setBusy(false); }
   }
 
+  async function contactMerchant() {
+    if (!selectedOrder) return;
+    setBusy(true); setError("");
+    try {
+      const result = await api<ShopConversationDetail>(`/api/shop/orders/${selectedOrder.order.id}/conversation`, "POST", {});
+      router.push(`/patient/shop-messages?conversation=${result.conversation.id}`);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "创建商家会话失败。"); }
+    finally { setBusy(false); }
+  }
+
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalCents = cart.reduce((sum, item) => sum + item.priceCents * item.quantity, 0);
   const grouped = new Map<number, { storeName: string; city: string; address: string; offers: ShopOffer[] }>();
@@ -150,7 +160,7 @@ export default function PharmacyPage() {
       </section>
     </> : view === "cart" ? <section className="pharmacy-section shop-cart"><div className="pharmacy-section-heading"><div><p className="pharmacy-kicker">YOUR CART</p><h2>购物车</h2></div><p>当前仅支持同一家店铺的商品</p></div>
       {cart.length === 0 ? <div className="pharmacy-empty">购物车还是空的。先去浏览有货的演示用品吧。</div> : <><p className="shop-cart-store">店铺：{cart[0].storeName}</p><div className="shop-cart-items">{cart.map(item => <article className="shop-cart-item" key={item.id}><div><h3>{item.productName}</h3><p>{yuan(item.priceCents)} / 件 · 当前可售 {item.available} 件</p>{!item.purchasable && <p className="error">商品已下架、店铺暂停或库存不足；请移除或稍后再试。</p>}</div><div className="shop-cart-actions"><button type="button" disabled={busy || item.quantity <= 1} onClick={() => void changeQuantity(item, item.quantity - 1)} aria-label={`减少${item.productName}数量`}>−</button><strong>{item.quantity}</strong><button type="button" disabled={busy || item.quantity >= 99} onClick={() => void changeQuantity(item, item.quantity + 1)} aria-label={`增加${item.productName}数量`}>＋</button><span>{yuan(item.priceCents * item.quantity)}</span><button type="button" onClick={() => void remove(item)} disabled={busy}>移除</button></div></article>)}</div><div className="shop-cart-total"><strong>商品合计：{yuan(totalCents)}</strong><p>提交订单时服务端会重新核对价格与库存，并预留 15 分钟；模拟支付不产生真实扣款。</p><button type="button" disabled={busy || cart.some(item => !item.purchasable)} onClick={() => void checkout()}>{busy ? "提交中…" : "提交演示订单"}</button></div></>}
-    </section> : <section className="pharmacy-section shop-orders"><div className="pharmacy-section-heading"><div><p className="pharmacy-kicker">DEMO ORDERS</p><h2>我的订单</h2></div><p>最近 100 单 · 模拟支付</p></div><div className="shop-order-layout"><div className="shop-order-list">{orders.length === 0 ? <div className="pharmacy-empty">暂无演示订单。</div> : orders.map(order => <button type="button" key={order.id} className={selectedOrder?.order.id === order.id ? "active" : ""} onClick={() => void openOrder(order.id)}><strong>订单 #{order.id} · {order.storeName}</strong><span>{orderStatus[order.status]} · {yuan(order.totalCents)}</span></button>)}</div><div className="shop-order-detail">{selectedOrder ? <><h3>订单 #{selectedOrder.order.id}</h3><p>{selectedOrder.order.storeName} · {orderStatus[selectedOrder.order.status]}</p><p>创建时间：{new Date(selectedOrder.order.createdAt).toLocaleString("zh-CN")}</p>{selectedOrder.order.status === "PENDING_PAYMENT" && <p>支付截止：{new Date(selectedOrder.order.expiresAt).toLocaleString("zh-CN")}</p>}<div>{selectedOrder.items.map(item => <p key={item.id}>{item.productName} × {item.quantity} · {yuan(item.unitPriceCents * item.quantity)}</p>)}</div><strong>合计 {yuan(selectedOrder.order.totalCents)}</strong>{selectedOrder.order.status === "PENDING_PAYMENT" && <div className="shop-order-actions"><button type="button" disabled={busy} onClick={() => void changeOrder("pay")}>模拟支付</button><button type="button" disabled={busy} onClick={() => void changeOrder("cancel")}>取消订单</button></div>}<p className="note">此订单仅供演示，没有真实支付、发货或配送。</p></> : <p>选择左侧订单查看明细与可执行操作。</p>}</div></div></section>}
+    </section> : <section className="pharmacy-section shop-orders"><div className="pharmacy-section-heading"><div><p className="pharmacy-kicker">DEMO ORDERS</p><h2>我的订单</h2></div><p>最近 100 单 · 模拟支付</p></div><div className="shop-order-layout"><div className="shop-order-list">{orders.length === 0 ? <div className="pharmacy-empty">暂无演示订单。</div> : orders.map(order => <button type="button" key={order.id} className={selectedOrder?.order.id === order.id ? "active" : ""} onClick={() => void openOrder(order.id)}><strong>订单 #{order.id} · {order.storeName}</strong><span>{orderStatus[order.status]} · {yuan(order.totalCents)}</span></button>)}</div><div className="shop-order-detail">{selectedOrder ? <><h3>订单 #{selectedOrder.order.id}</h3><p>{selectedOrder.order.storeName} · {orderStatus[selectedOrder.order.status]}</p><p>创建时间：{new Date(selectedOrder.order.createdAt).toLocaleString("zh-CN")}</p>{selectedOrder.order.status === "PENDING_PAYMENT" && <p>支付截止：{new Date(selectedOrder.order.expiresAt).toLocaleString("zh-CN")}</p>}<div>{selectedOrder.items.map(item => <p key={item.id}>{item.productName} × {item.quantity} · {yuan(item.unitPriceCents * item.quantity)}</p>)}</div><strong>合计 {yuan(selectedOrder.order.totalCents)}</strong>{selectedOrder.order.status === "PENDING_PAYMENT" && <div className="shop-order-actions"><button type="button" disabled={busy} onClick={() => void changeOrder("pay")}>模拟支付</button><button type="button" disabled={busy} onClick={() => void changeOrder("cancel")}>取消订单</button></div>}<div className="shop-order-actions"><button type="button" disabled={busy} onClick={() => void contactMerchant()}>联系商家</button></div><p className="note">此订单仅供演示，没有真实支付、发货或配送。</p></> : <p>选择左侧订单查看明细与可执行操作。</p>}</div></div></section>}
     <footer className="pharmacy-footer">本页只做教学演示，不提供药品销售、处方审核、真实支付或配送；不根据体检指标自动推荐药品或保健品。</footer>
   </main></>;
 }

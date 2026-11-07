@@ -26,7 +26,9 @@ test("演示订单可取消释放库存、再次下单模拟支付并由商家�
   await product.getByRole("button", { name: "调整库存" }).click();
   await product.getByLabel("目标库存").fill("2");
   await product.getByRole("button", { name: "保存库存" }).click();
+  await expect(product).toContainText("可售库存：2");
   await product.getByRole("button", { name: "上架", exact: true }).click();
+  await expect(product).toContainText("已上架");
   await page.getByRole("button", { name: "开始演示营业" }).click();
   await expect(page.getByText("演示营业中", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "退出登录" }).click();

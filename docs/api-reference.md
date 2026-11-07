@@ -45,4 +45,26 @@
 
 主流程错误语义：未授权即咨询返回 409；指定医生不是当前获授权者返回 409；医生未接受时访问消息会话返回 404；患者撤销后医生访问返回 404，患者仍可读历史但发消息返回 409。CSRF 缺失返回 403。不要将这些研发预览接口用于真实患者资料或诊疗。
 
-实现出处：`server/src/main/java/com/jwzz/server` 下的 Controller、`SecurityConfig`、V1–V6 迁移。手工验收见[消息页验收](messages-acceptance.md)。
+实现出处：`server/src/main/java/com/jwzz/server` 下的 Controller、`SecurityConfig`、V1–V11 迁移。医生咨询手工验收见[消息页验收](messages-acceptance.md)，商家订单消息见[商城第五阶段验收](shop-stage5-acceptance.md)。
+
+## 商城与订单消息补充（V7–V11）
+
+以下路径仍以 `/api` 开头；商家消息和医生消息是不同接口、不同表，不能互相访问。
+
+| 方法与路径 | 角色 | 请求要点 | 成功结果 |
+|---|---|---|---|
+| GET `/shop/products` | 用户 | `query,category,sort,page,size` | 有货、上架且营业中的演示商品分页 |
+| GET `/shop/cart`；POST `/shop/cart/items` | 用户 | 添加 `{skuId,quantity}`；仅单店 | 自己的购物车；库存不足/跨店 409 |
+| PUT/DELETE `/shop/cart/items/{id}` | 用户 | PUT `{quantity}` | 调整或移除自己的购物车项目 |
+| POST `/shop/orders` | 用户 | `{idempotencyKey}`，8–64 位字母数字或连字符 | 201 订单与快照；重复键返回原订单 |
+| GET `/shop/orders`；GET `/shop/orders/{id}` | 用户 | 无 | 本人订单列表/明细；他人 404 |
+| POST `/shop/orders/{id}/pay`；POST `/shop/orders/{id}/cancel` | 用户 | 无 | 模拟支付或取消；仅待支付能取消 |
+| GET `/merchant/orders`；GET `/merchant/orders/{id}` | 商家 | 无 | 本店订单列表/明细；他店 404 |
+| POST `/merchant/orders/{id}/accept` | 商家 | 无 | 已模拟支付订单接单、预留转已售 |
+| POST `/shop/orders/{id}/conversation` | 订单用户 | `{body?}`，空值填默认订单问候 | 201 `{conversation,messages}`；重复调用返回同一会话 |
+| GET `/shop/conversations`；GET `/shop/conversations/{id}` | 用户 | 无 | 本人订单会话列表/最近 200 条消息 |
+| POST `/shop/conversations/{id}/messages`；POST `/shop/conversations/{id}/read` | 用户 | 发消息 `{body}`，1–2000 字；或无请求体标记已读 | 201 消息；204 已读 |
+| GET `/merchant/conversations`；GET `/merchant/conversations/{id}` | 商家 | 无 | 本店订单会话列表/详情 |
+| POST `/merchant/conversations/{id}/messages`；POST `/merchant/conversations/{id}/read` | 商家 | 同上 | 201 消息；204 已读 |
+
+订单关联商家消息的权限按当前账号与 `shop_conversation.user_id` 或店铺 `merchant_id` 判定；不允许传入自称的用户/商家 ID。不存在或非本人资源统一 404。商家账号访问医生 `/messages/**`、医生账号访问 `/shop/**` 和 `/merchant/**` 均为 403。消息不是正式诊疗或药学咨询通道。

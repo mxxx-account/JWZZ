@@ -1,0 +1,17 @@
+{
+  "measuredAt": "2026-11-07T13:41:27.823Z",
+  "base": "http://127.0.0.1:8080",
+  "nodeVersion": "v24.19.0",
+  "platform": "win32",
+  "syntheticStoreId": 153,
+  "syntheticOrderId": 38,
+  "syntheticConversationId": 9,
+  "warmupPerReadRoute": 10,
+  "results": [
+    { "label": "user-conversation-list", "method": "GET", "path": "/api/shop/conversations", "requests": 300, "concurrency": 20, "elapsedSeconds": 0.118, "throughputRps": 2548.9, "bytes": 71700, "p50Ms": 7.1, "p95Ms": 12.1, "p99Ms": 16, "maxMs": 16.9, "errors": {} },
+    { "label": "user-conversation-detail", "method": "GET", "path": "/api/shop/conversations/{conversationId}", "requests": 300, "concurrency": 20, "elapsedSeconds": 0.118, "throughputRps": 2550.3, "bytes": 120392, "p50Ms": 5.7, "p95Ms": 13.7, "p99Ms": 18.3, "maxMs": 20, "errors": {} },
+    { "label": "merchant-conversation-list", "method": "GET", "path": "/api/merchant/conversations", "requests": 300, "concurrency": 20, "elapsedSeconds": 0.095, "throughputRps": 3142.7, "bytes": 61950, "p50Ms": 5.1, "p95Ms": 13.4, "p99Ms": 15.5, "maxMs": 16.4, "errors": {} },
+    { "label": "user-message-send", "method": "POST", "path": "/api/shop/conversations/{conversationId}/messages", "requests": 30, "concurrency": 10, "elapsedSeconds": 0.08, "throughputRps": 376.1, "bytes": 3440, "p50Ms": 21.3, "p95Ms": 33.6, "p99Ms": 35.6, "maxMs": 35.6, "errors": {} },
+    { "label": "user-conversation-detail-after-30-sends", "method": "GET", "path": "/api/shop/conversations/{conversationId}", "requests": 300, "concurrency": 20, "elapsedSeconds": 0.105, "throughputRps": 2860.4, "bytes": 1148194, "p50Ms": 5.6, "p95Ms": 14.4, "p99Ms": 18.2, "maxMs": 20.4, "errors": {} }
+  ]
+}
