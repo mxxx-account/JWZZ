@@ -32,13 +32,16 @@ public class AuthController {
     private final PasswordEncoder encoder;
     private final DoctorDirectoryStore doctors;
     private final boolean doctorSelfRegistrationEnabled;
+    private final boolean merchantSelfRegistrationEnabled;
 
     public AuthController(UserStore users, PasswordEncoder encoder, DoctorDirectoryStore doctors,
-                          @Value("${app.doctor-self-registration-enabled:false}") boolean doctorSelfRegistrationEnabled) {
+                          @Value("${app.doctor-self-registration-enabled:false}") boolean doctorSelfRegistrationEnabled,
+                          @Value("${app.merchant-self-registration-enabled:false}") boolean merchantSelfRegistrationEnabled) {
         this.users = users;
         this.encoder = encoder;
         this.doctors = doctors;
         this.doctorSelfRegistrationEnabled = doctorSelfRegistrationEnabled;
+        this.merchantSelfRegistrationEnabled = merchantSelfRegistrationEnabled;
     }
 
     @GetMapping("/csrf")
@@ -55,7 +58,10 @@ public class AuthController {
         String name = request.name().trim();
         if (name.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name is required");
         String role = request.role().trim().toUpperCase(java.util.Locale.ROOT);
-        if (!role.equals("USER") && !role.equals("DOCTOR")) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid role");
+        if (!java.util.Set.of("USER", "DOCTOR", "MERCHANT").contains(role))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid role");
+        if (role.equals("MERCHANT") && !merchantSelfRegistrationEnabled)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Merchant registration is disabled");
         if (role.equals("DOCTOR")) {
             if (!doctorSelfRegistrationEnabled) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Doctor registration is disabled");
             if (request.specialty() == null || !java.util.Set.of("GENERAL", "CARDIOLOGY", "ENDOCRINOLOGY").contains(request.specialty()))

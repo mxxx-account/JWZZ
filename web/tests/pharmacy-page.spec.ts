@@ -9,6 +9,7 @@ async function openPharmacy(page: Page) {
   await page.getByRole("button", { name: "注册并登录" }).click();
   await page.getByRole("link", { name: "药店" }).click();
   await expect(page).toHaveURL(/\/patient\/pharmacy$/);
+  await page.waitForLoadState("networkidle");
 }
 
 test("药店页隐藏定位和附近药店，保留用品浏览与搜索", async ({ page }) => {

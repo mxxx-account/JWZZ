@@ -1,4 +1,7 @@
-export type CurrentUser = { id: number; email: string; role: "USER" | "DOCTOR"; name: string };
+export type Role = "USER" | "DOCTOR" | "MERCHANT";
+export type CurrentUser = { id: number; email: string; role: Role; name: string };
+export type MerchantStore = { id: number; merchantId: number; name: string; description: string; city: string; address: string; status: "DRAFT"; createdAt: string; updatedAt: string };
+export function homeForRole(role: Role) { return role === "DOCTOR" ? "/doctor" : role === "MERCHANT" ? "/merchant" : "/patient"; }
 export type Report = {
   id: number;
   ownerId: number;

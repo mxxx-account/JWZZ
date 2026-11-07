@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, type CurrentUser } from "@/lib/api";
+import { api, homeForRole, type CurrentUser } from "@/lib/api";
 import { AppNav } from "../app-nav";
 import { IndicatorPanel } from "./indicator-panel";
 import { EntryHistory } from "./entry-history";
@@ -29,7 +29,7 @@ export default function PatientPage() {
     const requested = new URLSearchParams(window.location.search).get("view");
     if (views.some(item => item.id === requested)) setView(requested as View);
     api<CurrentUser>("/api/auth/me").then(current => {
-      if (current.role !== "USER") { router.replace("/doctor"); return; }
+      if (current.role !== "USER") { router.replace(homeForRole(current.role)); return; }
       setUser(current);
     }).catch(() => router.replace("/"));
   }, [router]);

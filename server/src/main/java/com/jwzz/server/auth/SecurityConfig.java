@@ -47,11 +47,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/pharmacies/nearby").hasRole("USER")
                 .requestMatchers(HttpMethod.GET, "/api/pharmacies/region").hasRole("USER")
                 .requestMatchers("/api/doctor/**").hasRole("DOCTOR")
+                .requestMatchers("/api/merchant/**").hasRole("MERCHANT")
                 .requestMatchers(HttpMethod.GET, "/api/doctors").hasRole("USER")
-                .requestMatchers("/api/messages/**", "/api/messages").authenticated()
+                .requestMatchers("/api/messages/**", "/api/messages").hasAnyRole("USER", "DOCTOR")
                 .requestMatchers("/api/consultations", "/api/consultations/**").hasRole("USER")
                 .requestMatchers(HttpMethod.POST, "/api/reports").hasRole("USER")
-                .requestMatchers("/api/auth/**", "/api/reports/**").authenticated()
+                .requestMatchers("/api/reports/**").hasAnyRole("USER", "DOCTOR")
+                .requestMatchers("/api/auth/**").authenticated()
                 .anyRequest().denyAll())
             .formLogin(login -> login.loginProcessingUrl("/api/auth/login")
                 .usernameParameter("email")
@@ -70,7 +72,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource(@Value("${JWZZ_CORS_ORIGINS:http://localhost:3000,http://127.0.0.1:3000}") String origins) {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).filter(value -> !value.isEmpty()).toList());
-        config.setAllowedMethods(List.of("GET", "POST", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
         config.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

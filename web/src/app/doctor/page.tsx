@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, type Consultation, type CurrentUser, type Report } from "@/lib/api";
+import { api, homeForRole, type Consultation, type CurrentUser, type Report } from "@/lib/api";
 import { ReportContent } from "../report-content";
 import { AppNav } from "../app-nav";
 
@@ -16,7 +16,7 @@ export default function DoctorPage() {
 
   useEffect(() => {
     api<CurrentUser>("/api/auth/me").then(async current => {
-      if (current.role !== "DOCTOR") { router.replace("/patient"); return; }
+      if (current.role !== "DOCTOR") { router.replace(homeForRole(current.role)); return; }
       setUser(current);
       void api<void>("/api/doctor/presence", "POST").catch(() => undefined);
       const [reportResult, consultationResult] = await Promise.allSettled([

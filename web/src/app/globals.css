@@ -22,6 +22,19 @@ input { width: 100%; border: 1px solid #a9c1ca; border-radius: 8px; padding: 11p
 .tabs .selected { background: #126a69; color: white; }
 .error { color: #b42318; }
 .dashboard { padding-top: 34px; }
+.merchant-home { padding-top: 34px; }
+.merchant-home h1 { font-size: clamp(36px, 5vw, 60px); }
+.merchant-home > .note { max-width: 760px; margin-top: 12px; }
+.merchant-store-panel { max-width: 850px; }
+.merchant-panel-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; }
+.merchant-panel-heading h2 { margin: 0; }
+.merchant-store-status { white-space: nowrap; padding: 7px 11px; border-radius: 100px; color: #126a69; background: #e7f3ef; font-size: 13px; font-weight: 700; }
+.merchant-store-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 24px; }
+.merchant-store-form label { display: grid; gap: 8px; font-weight: 700; }
+.merchant-store-form .merchant-wide { grid-column: 1 / -1; }
+.merchant-store-form textarea { width: 100%; min-height: 100px; padding: 11px; border: 1px solid #a9c1ca; border-radius: 8px; font: inherit; resize: vertical; }
+.merchant-store-form button { justify-self: start; }
+@media (max-width: 620px) { .merchant-store-form { grid-template-columns: 1fr; } }
 .app-nav { position: sticky; top: 0; z-index: 30; }
 .app-nav a[aria-current="page"] { color: #69e2d9; }
 nav { display: flex; gap: 24px; align-items: center; border-bottom: 1px solid #dce7ed; padding-bottom: 20px; }

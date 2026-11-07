@@ -158,6 +158,7 @@ test("用户工作区可在窄屏切换四项功能并查找历史报告", async
   await page.getByLabel("密码").fill("WorkspaceTest123!");
   await page.getByRole("button", { name: "注册并登录" }).click();
   await expect(page.locator(".indicator-panel")).toBeVisible();
+  await expect(page.getByText(/已登录：工作区测试用户/)).toBeVisible();
   for (const [label, expected] of [
     ["最近录入", ".history-section"],
     ["同类指标趋势", ".patient-main > .history-section"],

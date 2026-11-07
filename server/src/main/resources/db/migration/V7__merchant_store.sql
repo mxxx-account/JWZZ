@@ -1,0 +1,13 @@
+CREATE TABLE merchant_store (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  merchant_id BIGINT NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  description VARCHAR(500) NOT NULL DEFAULT '',
+  city VARCHAR(80) NOT NULL,
+  address VARCHAR(200) NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'DRAFT',
+  created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  CONSTRAINT fk_merchant_store_owner FOREIGN KEY (merchant_id) REFERENCES app_user(id),
+  CONSTRAINT uq_merchant_store_owner UNIQUE (merchant_id)
+);

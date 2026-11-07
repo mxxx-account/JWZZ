@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AppNav } from "../app-nav";
 import { useRouter } from "next/navigation";
-import { api, type Conversation, type ConversationDetail, type CurrentUser } from "@/lib/api";
+import { api, homeForRole, type Conversation, type ConversationDetail, type CurrentUser } from "@/lib/api";
 import { specialtyLabels } from "@/lib/specialty";
 
 const time = (value: string) => new Date(value).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -41,7 +41,7 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
     let cancelled = false;
     api<CurrentUser>("/api/auth/me").then(async current => {
       if (cancelled) return;
-      if (current.role !== role) { router.replace(current.role === "DOCTOR" ? "/doctor/messages" : "/patient/messages"); return; }
+      if (current.role !== role) { router.replace(homeForRole(current.role)); return; }
       setUser(current);
       if (role === "DOCTOR") await api<void>("/api/doctor/presence", "POST");
       const next = await refreshList();

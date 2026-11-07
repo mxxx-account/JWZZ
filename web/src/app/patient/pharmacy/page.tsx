@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AppNav } from "../../app-nav";
-import { api, type CurrentUser } from "@/lib/api";
+import { api, homeForRole, type CurrentUser } from "@/lib/api";
 
 type Pharmacy = { id: string; name: string; latitude: number; longitude: number; distanceMeters: number; address: string; openingHours: string; phone: string; osmUrl: string; demo?: boolean };
 type NearbyResult = { source: "OPENSTREETMAP"; radiusMeters: number; pharmacies: Pharmacy[] };
@@ -58,7 +58,7 @@ export default function PharmacyPage() {
 
   useEffect(() => {
     api<CurrentUser>("/api/auth/me").then(current => {
-      if (current.role !== "USER") { router.replace("/doctor"); return; }
+      if (current.role !== "USER") { router.replace(homeForRole(current.role)); return; }
       setUser(current);
     }).catch(() => router.replace("/"));
   }, [router]);
