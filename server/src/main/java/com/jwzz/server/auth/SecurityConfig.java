@@ -45,6 +45,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/indicators/**").hasRole("USER")
                 .requestMatchers("/api/indicators").hasRole("USER")
                 .requestMatchers(HttpMethod.GET, "/api/pharmacies/nearby").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/api/pharmacies/region").hasRole("USER")
                 .requestMatchers("/api/doctor/**").hasRole("DOCTOR")
                 .requestMatchers(HttpMethod.GET, "/api/doctors").hasRole("USER")
                 .requestMatchers("/api/messages/**", "/api/messages").authenticated()

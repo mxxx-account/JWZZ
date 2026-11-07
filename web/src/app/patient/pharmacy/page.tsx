@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AppNav } from "../../app-nav";
 import { api, type CurrentUser } from "@/lib/api";
 
 type Pharmacy = { id: string; name: string; latitude: number; longitude: number; distanceMeters: number; address: string; openingHours: string; phone: string; osmUrl: string; demo?: boolean };
 type NearbyResult = { source: "OPENSTREETMAP"; radiusMeters: number; pharmacies: Pharmacy[] };
+type RegionResult = { label: string; source: "OPENSTREETMAP" };
 type Location = { latitude: number; longitude: number; label: string; sample: boolean };
 type Product = { name: string; category: "健康器械" | "日常用品" | "营养补充"; icon: string; description: string; keywords: string };
 
@@ -44,6 +45,8 @@ export default function PharmacyPage() {
   const [locating, setLocating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [locationFeedback, setLocationFeedback] = useState("");
+  const locationRequest = useRef(0);
   const [lookupError, setLookupError] = useState("");
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [draft, setDraft] = useState("");
@@ -75,17 +78,43 @@ export default function PharmacyPage() {
   }, [user, location, reload]);
 
   function useCurrentLocation() {
-    setLocationError("");
+    setLocationError(""); setLocationFeedback("");
     if (!navigator.geolocation) { setLocationError("当前浏览器不支持定位。请使用示例位置体验页面。"); return; }
+    const requestId = ++locationRequest.current;
     setLocating(true);
     navigator.geolocation.getCurrentPosition(position => {
-      setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude, label: "当前位置", sample: false });
+      if (requestId !== locationRequest.current) return;
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      setLocation({ latitude, longitude, label: "当前位置（地区识别中）", sample: false });
+      setLocationFeedback("定位成功，正在识别所在地区…");
       setLocating(false);
+      api<RegionResult>(`/api/pharmacies/region?lat=${latitude}&lon=${longitude}`)
+        .then(region => {
+          if (requestId !== locationRequest.current) return;
+          setLocation({ latitude, longitude, label: region.label, sample: false });
+          setLocationFeedback(`定位成功，当前大致地区：${region.label}`);
+        })
+        .catch(() => {
+          if (requestId !== locationRequest.current) return;
+          setLocation({ latitude, longitude, label: "当前位置（地区名称暂不可用）", sample: false });
+          setLocationFeedback(`定位成功，但地区名称暂时无法解析；位置约为北纬 ${latitude.toFixed(2)}°、东经 ${longitude.toFixed(2)}°。`);
+        });
     }, error => {
+      if (requestId !== locationRequest.current) return;
       setLocationError(error.code === 1 ? "未获得定位权限。你可以在浏览器中允许定位，或使用示例位置。"
         : "暂时无法获取定位。请稍后重试，或使用示例位置。");
       setLocating(false);
     }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+  }
+
+  function useSampleLocation(label: string) {
+    const selected = sampleLocations.find(item => item.label === label);
+    if (!selected) return;
+    locationRequest.current += 1;
+    setLocating(false); setLocationError("");
+    setLocation({ ...selected, sample: true });
+    setLocationFeedback(`已选择${selected.label}；这不是你的当前定位。`);
   }
 
   function search(event: FormEvent) {
@@ -104,7 +133,8 @@ export default function PharmacyPage() {
       <form className="pharmacy-search" role="search" onSubmit={search}><label className="sr-only" htmlFor="pharmacy-search-input">搜索药品或健康用品</label><span aria-hidden="true">⌕</span><input id="pharmacy-search-input" value={draft} onChange={event => setDraft(event.target.value)} placeholder="搜索药品、保健品或健康用品" /><button type="submit">搜索</button></form>
     </section>
 
-    <div className="pharmacy-location-bar"><div><strong>⌖ {location?.label ?? "尚未选择位置"}</strong><small>{location ? `${location.sample ? "示例位置 · " : ""}附近 5 km · 按直线距离排序` : "定位仅在你点击后获取，不会写入账号资料"}</small></div><div className="pharmacy-location-actions"><button type="button" onClick={useCurrentLocation} disabled={locating}>{locating ? "正在定位…" : "使用当前位置"}</button><label>或选择示例位置<select aria-label="示例位置" value="" onChange={event => { const selected = sampleLocations.find(item => item.label === event.target.value); if (selected) setLocation({ ...selected, sample: true }); }}><option value="">选择城市</option>{sampleLocations.map(item => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label></div></div>
+    <div className="pharmacy-location-bar"><div><strong>⌖ {location?.label ?? "尚未选择位置"}</strong><small>{location ? `${location.sample ? "示例位置 · " : ""}附近 5 km · 按直线距离排序` : "定位仅在你点击后获取，不会写入账号资料"}</small></div><div className="pharmacy-location-actions"><button type="button" onClick={useCurrentLocation} disabled={locating}>{locating ? "正在定位…" : "使用当前位置"}</button><label>或选择示例位置<select aria-label="示例位置" value="" onChange={event => useSampleLocation(event.target.value)}><option value="">选择城市</option>{sampleLocations.map(item => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label></div></div>
+    {locationFeedback && <p role="status" className="pharmacy-location-success">{locationFeedback}</p>}
     {locationError && <p role="status" className="pharmacy-alert">{locationError}</p>}
     {lookupError && <p role="status" className="pharmacy-alert">{lookupError} <button type="button" onClick={() => setReload(value => value + 1)}>重试</button></p>}
 

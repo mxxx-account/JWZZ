@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test("药店首页定位、搜索和按距离展示药店", async ({ page, context }) => {
   const email = `pharmacy-e2e-${Date.now()}@example.invalid`;
+  await page.route("**/api/pharmacies/region?*", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ label: "湖北省 · 武汉市 · 洪山区", source: "OPENSTREETMAP" }) }));
   await page.route("**/api/pharmacies/nearby?*", async route => {
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
       source: "OPENSTREETMAP", radiusMeters: 5000,
@@ -36,8 +37,28 @@ test("药店首页定位、搜索和按距离展示药店", async ({ page, conte
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 30.5928, longitude: 114.3055 });
   await page.getByRole("button", { name: "使用当前位置" }).click();
-  await expect(page.getByText("⌖ 当前位置")).toBeVisible();
+  await expect(page.getByText("定位成功，当前大致地区：湖北省 · 武汉市 · 洪山区")).toBeVisible();
+  await expect(page.getByText("⌖ 湖北省 · 武汉市 · 洪山区")).toBeVisible();
   await expect(page.locator(".pharmacy-store-card")).toHaveCount(2);
+});
+
+test("地区和药店接口失败时仍明确显示定位成功", async ({ page, context }) => {
+  await page.route("**/api/pharmacies/region?*", route => route.fulfill({ status: 502, contentType: "application/json", body: "{}" }));
+  await page.route("**/api/pharmacies/nearby?*", route => route.fulfill({ status: 502, contentType: "application/json", body: "{}" }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "注册", exact: true }).click();
+  await page.getByLabel("邮箱").fill(`pharmacy-location-${Date.now()}@example.invalid`);
+  await page.getByLabel("姓名").fill("定位状态测试");
+  await page.getByLabel("密码").fill("PharmacyLocation123!");
+  await page.getByRole("button", { name: "注册并登录" }).click();
+  await page.getByRole("link", { name: "药店" }).click();
+  await page.waitForLoadState("networkidle");
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 30.5928, longitude: 114.3055 });
+  await page.getByRole("button", { name: "使用当前位置" }).click();
+  await expect(page.getByText("定位成功，但地区名称暂时无法解析", { exact: false })).toBeVisible();
+  await expect(page.getByText("地图服务暂时无法返回附近药店", { exact: false })).toBeVisible();
+  await expect(page.locator(".pharmacy-store-card")).toHaveCount(0);
 });
 
 test("药店页窄屏不横向溢出", async ({ page }) => {

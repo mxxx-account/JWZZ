@@ -18,6 +18,8 @@
 医生首页“待咨询→接受→进入消息”的当前流程见[验收记录](docs/doctor-pending-acceptance.md)。
 用户首页侧栏工作区、历史报告筛选和分页见[验收说明](docs/patient-workspace-acceptance.md)。
 药店探索页的定位、地图来源、演示商品和验收边界见[药店页说明](docs/pharmacy-acceptance.md)。
+药店下一阶段的“公开地图找店”和“商家入驻＋库存”方案比较见[方向取舍](docs/pharmacy-direction.md)。
+药店页“定位成功但看不出地区”的原因与修复见[问题记录](docs/pharmacy-location-bug-record.md)。
 
 ## 旧模型原型
 
