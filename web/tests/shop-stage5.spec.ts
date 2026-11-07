@@ -41,7 +41,7 @@ async function createStore(page: Page, name: string) {
 
 async function startOrderChat(page: Page, storeName: string) {
   await page.getByRole("link", { name: "药店" }).click();
-  await expect(page.getByText(/共 \d+ 项有货商品/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "常见健康用品" })).toBeVisible();
   await page.getByLabel("搜索商品或店铺").fill(storeName);
   await page.getByRole("button", { name: "搜索", exact: true }).click();
   const store = page.locator(".shop-store").filter({ hasText: storeName });

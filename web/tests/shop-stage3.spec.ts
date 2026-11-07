@@ -80,8 +80,11 @@ test("只搜索有货演示店铺商品，购物车单店持久化且不锁库�
   await page.getByRole("button", { name: "购物车（2）" }).click();
   await expect(page.locator(".shop-cart-item")).toContainText("¥200.00");
   await page.locator(".shop-cart-item").getByRole("button", { name: "移除" }).click();
-  await expect(page.getByText("购物车还是空的。先去浏览有货的演示用品吧。")).toBeVisible();
+  await expect(page.getByText("购物车还是空的。先去商品与店铺看看吧。")).toBeVisible();
   await page.getByRole("button", { name: "商品与店铺" }).click();
+  await expect(page.getByRole("heading", { name: "为您推荐的店铺" })).toBeVisible();
+  await page.getByLabel("搜索商品或店铺").fill(suffix);
+  await page.getByRole("button", { name: "搜索", exact: true }).click();
   await second.getByRole("button", { name: "加入购物车" }).click();
   await expect(page.getByRole("button", { name: "购物车（1）" })).toBeVisible();
 

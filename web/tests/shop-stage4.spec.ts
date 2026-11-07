@@ -35,7 +35,7 @@ test("演示订单可取消释放库存、再次下单模拟支付并由商家�
 
   await register(page, "USER", `order-user-${suffix}@example.invalid`, "订单演示用户");
   await page.getByRole("link", { name: "药店" }).click();
-  await expect(page.getByText(/共 \d+ 项有货商品/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "常见健康用品" })).toBeVisible();
   await page.getByLabel("搜索商品或店铺").fill(suffix);
   await page.getByRole("button", { name: "搜索", exact: true }).click();
   await expect(page.getByRole("heading", { name: `“${suffix}”的搜索结果` })).toBeVisible();
