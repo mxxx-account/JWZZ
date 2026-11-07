@@ -25,6 +25,8 @@ const sampleLocations = [
   { label: "北京市中心（示例）", latitude: 39.9042, longitude: 116.4074 },
 ];
 const categories = ["全部", "健康器械", "日常用品", "营养补充"] as const;
+// 暂停位置发现功能：保留定位、地图查询和列表实现，日后可通过环境变量恢复。
+const locationDiscoveryEnabled = process.env.NEXT_PUBLIC_ENABLE_LOCATION_DISCOVERY === "true";
 
 function distanceText(meters: number) { return meters < 1000 ? `${meters} m` : `${(meters / 1000).toFixed(1)} km`; }
 function productMatches(product: Product, query: string) {
@@ -62,7 +64,7 @@ export default function PharmacyPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!user || !location) return;
+    if (!locationDiscoveryEnabled || !user || !location) return;
     let cancelled = false;
     setLoading(true); setLookupError(""); setPharmacies([]);
     api<NearbyResult>(`/api/pharmacies/nearby?lat=${location.latitude}&lon=${location.longitude}`)
@@ -128,21 +130,26 @@ export default function PharmacyPage() {
 
   return <><AppNav role="USER" active="pharmacy" /><main className="pharmacy-page">
     <section className="pharmacy-hero">
-      <div className="pharmacy-hero-copy"><p className="pharmacy-kicker">见微知著 · 药店探索</p><h1>{query ? "查找附近药店" : "健康用品与附近药店"}</h1><p>搜索药品或健康用品，并按距离查看可联系的附近药店。商品库存、价格及营业状态需向药店核实。</p></div>
-      <div className="pharmacy-hero-mark" aria-hidden="true"><span>＋</span><i>就近探索</i></div>
-      <form className="pharmacy-search" role="search" onSubmit={search}><label className="sr-only" htmlFor="pharmacy-search-input">搜索药品或健康用品</label><span aria-hidden="true">⌕</span><input id="pharmacy-search-input" value={draft} onChange={event => setDraft(event.target.value)} placeholder="搜索药品、保健品或健康用品" /><button type="submit">搜索</button></form>
+      <div className="pharmacy-hero-copy"><p className="pharmacy-kicker">见微知著 · 健康用品</p><h1>健康用品目录</h1><p>浏览和搜索健康用品示例，了解常见品类。本页暂无商家库存、价格或在线购买功能。</p></div>
+      <div className="pharmacy-hero-mark" aria-hidden="true"><span>＋</span><i>用品探索</i></div>
+      <form className="pharmacy-search" role="search" onSubmit={search}><label className="sr-only" htmlFor="pharmacy-search-input">搜索健康用品</label><span aria-hidden="true">⌕</span><input id="pharmacy-search-input" value={draft} onChange={event => setDraft(event.target.value)} placeholder="搜索健康用品示例" /><button type="submit">搜索</button></form>
     </section>
 
-    <div className="pharmacy-location-bar"><div><strong>⌖ {location?.label ?? "尚未选择位置"}</strong><small>{location ? `${location.sample ? "示例位置 · " : ""}附近 5 km · 按直线距离排序` : "定位仅在你点击后获取，不会写入账号资料"}</small></div><div className="pharmacy-location-actions"><button type="button" onClick={useCurrentLocation} disabled={locating}>{locating ? "正在定位…" : "使用当前位置"}</button><label>或选择示例位置<select aria-label="示例位置" value="" onChange={event => useSampleLocation(event.target.value)}><option value="">选择城市</option>{sampleLocations.map(item => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label></div></div>
-    {locationFeedback && <p role="status" className="pharmacy-location-success">{locationFeedback}</p>}
-    {locationError && <p role="status" className="pharmacy-alert">{locationError}</p>}
-    {lookupError && <p role="status" className="pharmacy-alert">{lookupError} <button type="button" onClick={() => setReload(value => value + 1)}>重试</button></p>}
+    {locationDiscoveryEnabled && <>
+      <div className="pharmacy-location-bar"><div><strong>⌖ {location?.label ?? "尚未选择位置"}</strong><small>{location ? `${location.sample ? "示例位置 · " : ""}附近 5 km · 按直线距离排序` : "定位仅在你点击后获取，不会写入账号资料"}</small></div><div className="pharmacy-location-actions"><button type="button" onClick={useCurrentLocation} disabled={locating}>{locating ? "正在定位…" : "使用当前位置"}</button><label>或选择示例位置<select aria-label="示例位置" value="" onChange={event => useSampleLocation(event.target.value)}><option value="">选择城市</option>{sampleLocations.map(item => <option key={item.label} value={item.label}>{item.label}</option>)}</select></label></div></div>
+      {locationFeedback && <p role="status" className="pharmacy-location-success">{locationFeedback}</p>}
+      {locationError && <p role="status" className="pharmacy-alert">{locationError}</p>}
+      {lookupError && <p role="status" className="pharmacy-alert">{lookupError} <button type="button" onClick={() => setReload(value => value + 1)}>重试</button></p>}
+    </>}
 
     {!query ? <>
-      <section className="pharmacy-section"><div className="pharmacy-section-heading"><div><p className="pharmacy-kicker">SHOP BY NEED</p><h2>常见健康用品</h2></div><p>示例品类，不是销量榜或个人医疗推荐</p></div><div className="pharmacy-category-tabs">{categories.map(item => <button type="button" key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}</button>)}</div><div className="pharmacy-product-grid">{filteredProducts.map(product => <button type="button" className="pharmacy-product-card" key={product.name} onClick={() => searchFor(product.name)}><span className={`pharmacy-product-icon ${product.category === "营养补充" ? "supplement" : product.category === "日常用品" ? "daily" : "device"}`} aria-hidden="true">{product.icon}</span><span className="pharmacy-product-type">{product.category}</span><strong>{product.name}</strong><small>{product.description}</small><span className="pharmacy-product-link">查找附近药店 →</span></button>)}</div></section>
-      <section className="pharmacy-section"><div className="pharmacy-section-heading"><div><p className="pharmacy-kicker">NEAR YOU</p><h2>附近药店</h2></div><p>仅按位置展示，不代表好评、资质或商品库存</p></div><PharmacyList pharmacies={pharmacies.slice(0, 6)} loading={loading} hasLocation={Boolean(location)} emptyText="附近暂未找到地图标注的药店。" />{pharmacies.length > 6 && <button className="pharmacy-show-all" type="button" onClick={() => searchFor("药店")}>查看全部 {pharmacies.length} 家附近药店 →</button>}</section>
-    </> : <div className="pharmacy-results-layout"><div><button className="pharmacy-back" type="button" onClick={() => { setQuery(""); setDraft(""); }}>← 返回药店首页</button><section className="pharmacy-section"><div className="pharmacy-section-heading"><div><p className="pharmacy-kicker">SEARCH RESULTS</p><h2>“{query}”的搜索结果</h2></div><p>{location ? `附近 ${pharmacies.length} 家药店 · 距离从近到远` : "先授权定位或选择示例位置"}</p></div><div className="pharmacy-search-disclaimer">地图只提供药店位置，无法核实“{query}”是否有货；以下为附近可联系的药店，并非已确认有货的搜索结果。购药请遵医嘱并向药师核对。</div><PharmacyList pharmacies={pharmacies} loading={loading} hasLocation={Boolean(location)} emptyText="附近暂未找到地图标注的药店，可扩大范围或换一个位置。" /></section></div><aside className="pharmacy-results-aside"><h3>相关用品示例</h3>{matches.length ? matches.map(product => <div className="pharmacy-related" key={product.name}><span aria-hidden="true">{product.icon}</span><div><strong>{product.name}</strong><small>{product.category} · 库存和价格未核实</small></div></div>) : <p>暂无匹配的示例商品目录。仍可浏览附近药店并自行咨询。</p>}<div className="pharmacy-safety"><strong>购药提示</strong><p>本页不提供处方审核、在线下单或配送，也不根据体检指标自动推荐药品或保健品。</p></div></aside></div>}
-    <footer className="pharmacy-footer"><span>药店位置数据：<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a></span><span>地图信息可能不完整或过时；直线距离不等于实际路程。</span></footer>
+      <section className="pharmacy-section"><div className="pharmacy-section-heading"><div><p className="pharmacy-kicker">SHOP BY NEED</p><h2>常见健康用品</h2></div><p>示例品类，不是销量榜或个人医疗推荐</p></div><div className="pharmacy-category-tabs">{categories.map(item => <button type="button" key={item} className={category === item ? "active" : ""} onClick={() => setCategory(item)}>{item}</button>)}</div><div className="pharmacy-product-grid">{filteredProducts.map(product => <button type="button" className="pharmacy-product-card" key={product.name} onClick={() => searchFor(product.name)}><span className={`pharmacy-product-icon ${product.category === "营养补充" ? "supplement" : product.category === "日常用品" ? "daily" : "device"}`} aria-hidden="true">{product.icon}</span><span className="pharmacy-product-type">{product.category}</span><strong>{product.name}</strong><small>{product.description}</small><span className="pharmacy-product-link">查看用品信息 →</span></button>)}</div></section>
+      {locationDiscoveryEnabled && <section className="pharmacy-section"><div className="pharmacy-section-heading"><div><p className="pharmacy-kicker">NEAR YOU</p><h2>附近药店</h2></div><p>仅按位置展示，不代表好评、资质或商品库存</p></div><PharmacyList pharmacies={pharmacies.slice(0, 6)} loading={loading} hasLocation={Boolean(location)} emptyText="附近暂未找到地图标注的药店。" />{pharmacies.length > 6 && <button className="pharmacy-show-all" type="button" onClick={() => searchFor("药店")}>查看全部 {pharmacies.length} 家附近药店 →</button>}</section>}
+    </> : <>
+      <button className="pharmacy-back" type="button" onClick={() => { setQuery(""); setDraft(""); }}>← 返回用品目录</button>
+      <section className="pharmacy-section"><div className="pharmacy-section-heading"><div><p className="pharmacy-kicker">SEARCH RESULTS</p><h2>“{query}”的搜索结果</h2></div><p>示例用品 · {matches.length} 项</p></div><div className="pharmacy-search-disclaimer">仅展示健康用品示例品类，不代表商家有货、价格或个人医疗推荐。本页暂不提供下单和配送服务。</div>{matches.length ? <div className="pharmacy-product-grid">{matches.map(product => <article className="pharmacy-product-card" key={product.name}><span className={`pharmacy-product-icon ${product.category === "营养补充" ? "supplement" : product.category === "日常用品" ? "daily" : "device"}`} aria-hidden="true">{product.icon}</span><span className="pharmacy-product-type">{product.category}</span><strong>{product.name}</strong><small>{product.description}</small></article>)}</div> : <div className="pharmacy-empty">暂无匹配的示例用品，请尝试其他关键词。</div>}</section>
+    </>}
+    <footer className="pharmacy-footer"><span>本页内容仅供了解常见健康用品，不提供诊断或处方建议。</span>{locationDiscoveryEnabled && <span>药店位置数据：<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a></span>}</footer>
   </main></>;
 }
 
