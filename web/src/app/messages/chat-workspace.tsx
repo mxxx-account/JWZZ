@@ -6,6 +6,7 @@ import { AppNav } from "../app-nav";
 import { useRouter } from "next/navigation";
 import { api, homeForRole, type Conversation, type ConversationDetail, type CurrentUser } from "@/lib/api";
 import { specialtyLabels } from "@/lib/specialty";
+import { outboxKey, pendingMessage, prepareMessage } from "@/lib/message-outbox";
 
 const time = (value: string) => new Date(value).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
@@ -82,12 +83,18 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
     return () => window.clearTimeout(timer);
   }, [notice]);
 
+  useEffect(() => {
+    setDraft(user && activeId !== null ? pendingMessage(outboxKey(user.id, "consultation", activeId))?.body ?? "" : "");
+  }, [user, activeId]);
+
   async function send() {
     const body = draft.trim();
     if (!body || activeId === null || !detail?.conversation.canSend || busy) return;
     setBusy(true); setNotice("");
     try {
-      await api(`/api/messages/conversations/${activeId}`, "POST", { body });
+      const key = outboxKey(user!.id, "consultation", activeId);
+      await api(`/api/messages/conversations/${activeId}`, "POST", prepareMessage(key, body));
+      sessionStorage.removeItem(key);
       setDraft("");
       await refreshDetail(activeId);
       await refreshList();

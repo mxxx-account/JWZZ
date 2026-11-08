@@ -18,7 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/merchant/conversations")
 public class MerchantShopMessageController {
-    public record MessageRequest(@NotBlank @Size(max = 2000) String body) {}
+    public record MessageRequest(@NotBlank @Size(max = 2000) String body,
+        @jakarta.validation.constraints.Pattern(regexp="[A-Za-z0-9-]{8,64}") String clientMessageId) {}
     private final UserStore users;
     private final ShopConversationService service;
     public MerchantShopMessageController(UserStore users, ShopConversationService service) {
@@ -39,7 +40,7 @@ public class MerchantShopMessageController {
     @ResponseStatus(HttpStatus.CREATED)
     public ShopConversationStore.Message send(@PathVariable long id,
                                               @Valid @RequestBody MessageRequest request, Principal principal) {
-        return service.send(merchantId(principal), true, id, request.body());
+        return service.send(merchantId(principal), true, id, request.body(), request.clientMessageId());
     }
 
     @PostMapping("/{id}/read")

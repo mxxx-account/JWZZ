@@ -24,7 +24,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/messages")
 public class MessageController {
-    public record SendRequest(@NotBlank @Size(max = 2000) String body) {}
+    public record SendRequest(@NotBlank @Size(max = 2000) String body,
+        @jakarta.validation.constraints.Pattern(regexp="[A-Za-z0-9-]{8,64}") String clientMessageId) {}
     public record Summary(long id, long reportId, long peerId, String peerName, String peerSpecialty,
                           boolean peerOnline, String status, String lastMessage, LocalDateTime updatedAt,
                           int unreadCount, boolean canSend) {}
@@ -67,8 +68,15 @@ public class MessageController {
         String body = request.body().trim();
         if (body.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message is empty");
         var user = current(principal);
+        messages.lockConversation(id);
         boolean doctor = user.role().equals("DOCTOR");
         var item = accessible(id, user, doctor);
+        if (!doctor && !patientCanSend(item)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Doctor access was revoked");
+        var existing = messages.byClientId(id, user.id(), request.clientMessageId());
+        if (existing.isPresent()) {
+            if (!existing.get().body().equals(body)) throw new ResponseStatusException(HttpStatus.CONFLICT, "消息 ID 已用于不同内容");
+            return existing.get();
+        }
         if (doctor) {
             if (item.claimedDoctorId() == null || item.claimedDoctorId() != user.id())
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Claim this consultation first");
@@ -78,7 +86,7 @@ public class MessageController {
             if (!patientCanSend(item)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Doctor access was revoked");
             limiter.check("message-user", user.id(), 30);
         }
-        return messages.add(id, user.id(), body);
+        return messages.add(id, user.id(), body, request.clientMessageId());
     }
 
     @PostMapping("/conversations/{id}/read")

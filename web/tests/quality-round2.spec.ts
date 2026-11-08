@@ -184,6 +184,8 @@ test("消息已保存但响应丢失后，人工重试不应产生重复消息",
   await expect(page.getByLabel("输入商家消息")).toHaveValue("响应丢失后的唯一消息");
   const saved = await call<ShopConversationDetail>(page.request, `/api/shop/conversations/${chat.conversation.id}`);
   expect(saved.messages.filter(message => message.body === "响应丢失后的唯一消息")).toHaveLength(1);
+  await page.reload();
+  await expect(page.getByLabel("输入商家消息")).toHaveValue("响应丢失后的唯一消息");
   await page.getByRole("button", { name: "发送", exact: true }).click();
   await expect(page.getByLabel("输入商家消息")).toHaveValue("");
   const retried = await call<ShopConversationDetail>(page.request, `/api/shop/conversations/${chat.conversation.id}`);
@@ -234,7 +236,48 @@ test("咨询消息响应丢失后重试不应产生重复消息", async ({ page,
   await page.getByRole("button", { name: "发送", exact: true }).click();
   await expect(page.locator(".chat-toast")).toBeVisible();
   expect((await call<ConversationDetail>(page.request, `/api/messages/conversations/${clinic.id}`)).messages.filter(message => message.body === "咨询响应丢失后的唯一消息")).toHaveLength(1);
+  await page.reload();
+  await expect(page.getByLabel("输入消息", { exact: true })).toHaveValue("咨询响应丢失后的唯一消息");
   await page.getByRole("button", { name: "发送", exact: true }).click();
   await expect(page.getByLabel("输入消息", { exact: true })).toHaveValue("");
   expect((await call<ConversationDetail>(page.request, `/api/messages/conversations/${clinic.id}`)).messages.filter(message => message.body === "咨询响应丢失后的唯一消息")).toHaveLength(1);
+});
+
+test("商家消息20路同ID重试唯一、不同ID相同文本保留、复用ID改内容拒绝", async ({ page, shop }) => {
+  const order = await shop.order(), chat = await shop.conversation(order.order.id);
+  await checkIdempotency(page, `/api/shop/conversations/${chat.conversation.id}/messages`, `/api/shop/conversations/${chat.conversation.id}`);
+});
+
+test("咨询消息20路同ID重试唯一、不同ID相同文本保留、复用ID改内容拒绝", async ({ page, clinic }) => {
+  await checkIdempotency(page, `/api/messages/conversations/${clinic.id}`, `/api/messages/conversations/${clinic.id}`);
+});
+
+async function checkIdempotency(page: Page, sendPath: string, detailPath: string) {
+  const token = (await (await page.request.get(`${apiBase}/api/auth/csrf`)).json()).token;
+  const clientMessageId = crypto.randomUUID();
+  const responses = await Promise.all(Array.from({ length: 20 }, () => page.request.post(`${apiBase}${sendPath}`, {
+    headers: { "X-XSRF-TOKEN": token }, data: { body: "相同文本测试", clientMessageId },
+  })));
+  const ids: number[] = [];
+  for (const response of responses) { expect(response.status()).toBe(201); ids.push((await response.json()).id); }
+  expect(new Set(ids).size).toBe(1);
+  await call(page.request, sendPath, "POST", { body: "相同文本测试", clientMessageId: crypto.randomUUID() });
+  const detail = await call<ShopConversationDetail>(page.request, detailPath);
+  expect(detail.messages.filter(message => message.body === "相同文本测试")).toHaveLength(2);
+  const conflict = await page.request.post(`${apiBase}${sendPath}`, { headers: { "X-XSRF-TOKEN": token }, data: { body: "改过的内容", clientMessageId } });
+  expect(conflict.status()).toBe(409);
+  const invalid = await page.request.post(`${apiBase}${sendPath}`, { headers: { "X-XSRF-TOKEN": token }, data: { body: "非法 ID 不应写入", clientMessageId: "bad/id" } });
+  expect(invalid.status()).toBe(400);
+  return clientMessageId;
+}
+
+test("撤销授权后不能借旧幂等ID读取或重发咨询消息", async ({ page, clinic }) => {
+  const clientMessageId = crypto.randomUUID();
+  await call(page.request, `/api/messages/conversations/${clinic.id}`, "POST", { body: "撤销前已保存", clientMessageId });
+  const list = await call<{ id: number; peerId: number; reportId: number }[]>(page.request, "/api/messages/conversations");
+  const item = list.find(row => row.id === clinic.id)!;
+  await call(page.request, `/api/reports/${item.reportId}/grants/${item.peerId}`, "DELETE");
+  const token = (await (await page.request.get(`${apiBase}/api/auth/csrf`)).json()).token;
+  const response = await page.request.post(`${apiBase}/api/messages/conversations/${clinic.id}`, { headers: { "X-XSRF-TOKEN": token }, data: { body: "撤销前已保存", clientMessageId } });
+  expect(response.status()).toBe(409);
 });

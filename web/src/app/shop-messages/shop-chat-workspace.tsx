@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppNav } from "../app-nav";
 import { api, homeForRole, type CurrentUser, type ShopConversation, type ShopConversationDetail } from "@/lib/api";
+import { outboxKey, pendingMessage, prepareMessage } from "@/lib/message-outbox";
 
 const time = (value: string) => new Date(value).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
@@ -69,12 +70,18 @@ export function ShopChatWorkspace({ role }: { role: "USER" | "MERCHANT" }) {
     if (thread.current) thread.current.scrollTop = thread.current.scrollHeight;
   }, [detail?.messages.length, activeId]);
 
+  useEffect(() => {
+    setDraft(user && activeId !== null ? pendingMessage(outboxKey(user.id, "shop", activeId))?.body ?? "" : "");
+  }, [user, activeId]);
+
   async function send() {
     const body = draft.trim();
     if (!body || busy || activeId === null) return;
     setBusy(true); setNotice("");
     try {
-      await api(`${endpoint}/${activeId}/messages`, "POST", { body });
+      const key = outboxKey(user!.id, "shop", activeId);
+      await api(`${endpoint}/${activeId}/messages`, "POST", prepareMessage(key, body));
+      sessionStorage.removeItem(key);
       setDraft("");
       await refreshDetail(activeId);
       await refreshList();

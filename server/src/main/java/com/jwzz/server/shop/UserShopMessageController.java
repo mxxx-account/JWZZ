@@ -17,7 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/shop")
 public class UserShopMessageController {
-    public record MessageRequest(@Size(max = 2000) String body) {}
+    public record MessageRequest(@Size(max = 2000) String body,
+        @jakarta.validation.constraints.Pattern(regexp="[A-Za-z0-9-]{8,64}") String clientMessageId) {}
     private final UserStore users;
     private final ShopConversationService service;
     public UserShopMessageController(UserStore users, ShopConversationService service) {
@@ -45,7 +46,7 @@ public class UserShopMessageController {
     @ResponseStatus(HttpStatus.CREATED)
     public ShopConversationStore.Message send(@PathVariable long id,
                                               @Valid @RequestBody MessageRequest request, Principal principal) {
-        return service.send(userId(principal), false, id, request.body());
+        return service.send(userId(principal), false, id, request.body(), request.clientMessageId());
     }
 
     @PostMapping("/conversations/{id}/read")

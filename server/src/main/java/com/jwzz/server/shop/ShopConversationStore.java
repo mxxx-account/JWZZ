@@ -53,14 +53,24 @@ public class ShopConversationStore {
     }
 
     public Message addMessage(long conversationId, long senderId, String body) {
+        return addMessage(conversationId, senderId, body, null);
+    }
+
+    public Optional<Message> byClientId(long id, long senderId, String clientId) {
+        return jdbc.query("SELECT id,conversation_id,sender_id,body,created_at FROM shop_message WHERE conversation_id=? AND sender_id=? AND client_message_id=? FOR UPDATE",
+            (rs,row) -> message(rs), id, senderId, clientId).stream().findFirst();
+    }
+
+    public Message addMessage(long conversationId, long senderId, String body, String clientId) {
         var keys = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             var statement = connection.prepareStatement("""
-                INSERT INTO shop_message (conversation_id, sender_id, body) VALUES (?, ?, ?)
+                INSERT INTO shop_message (conversation_id, sender_id, body, client_message_id) VALUES (?, ?, ?, ?)
                 """, Statement.RETURN_GENERATED_KEYS);
             statement.setLong(1, conversationId);
             statement.setLong(2, senderId);
             statement.setString(3, body);
+            statement.setString(4, clientId);
             return statement;
         }, keys);
         jdbc.update("UPDATE shop_conversation SET updated_at=CURRENT_TIMESTAMP(6) WHERE id=?", conversationId);

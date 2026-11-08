@@ -15,14 +15,28 @@ public class MessageStore {
     public MessageStore(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
     public Message add(long consultationId, long senderId, String body) {
+        return add(consultationId, senderId, body, null);
+    }
+
+    public void lockConversation(long id) {
+        jdbc.queryForList("SELECT id FROM consultation_request WHERE id=? FOR UPDATE", id);
+    }
+
+    public Optional<Message> byClientId(long conversationId, long senderId, String clientId) {
+        return jdbc.query("SELECT id,consultation_id,sender_id,body,created_at FROM consultation_message WHERE consultation_id=? AND sender_id=? AND client_message_id=? FOR UPDATE",
+            (rs,row) -> map(rs), conversationId, senderId, clientId).stream().findFirst();
+    }
+
+    public Message add(long consultationId, long senderId, String body, String clientId) {
         var key = new GeneratedKeyHolder();
         jdbc.update(connection -> {
             var statement = connection.prepareStatement(
-                "INSERT INTO consultation_message (consultation_id, sender_id, body) VALUES (?, ?, ?)",
+                "INSERT INTO consultation_message (consultation_id, sender_id, body, client_message_id) VALUES (?, ?, ?, ?)",
                 java.sql.Statement.RETURN_GENERATED_KEYS);
             statement.setLong(1, consultationId);
             statement.setLong(2, senderId);
             statement.setString(3, body);
+            statement.setString(4, clientId);
             return statement;
         }, key);
         return jdbc.query("SELECT id, consultation_id, sender_id, body, created_at FROM consultation_message WHERE id=?",

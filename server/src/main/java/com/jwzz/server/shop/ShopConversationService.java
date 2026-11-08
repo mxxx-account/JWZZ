@@ -41,9 +41,20 @@ public class ShopConversationService {
 
     @Transactional
     public ShopConversationStore.Message send(long actorId, boolean merchant, long id, String body) {
+        return send(actorId, merchant, id, body, null);
+    }
+
+    @Transactional
+    public ShopConversationStore.Message send(long actorId, boolean merchant, long id, String body, String clientId) {
         var conversation = accessibleLocked(actorId, merchant, id);
+        String value = clean(body, null);
+        var existing = conversations.byClientId(id, actorId, clientId);
+        if (existing.isPresent()) {
+            if (!existing.get().body().equals(value)) throw new ResponseStatusException(HttpStatus.CONFLICT, "消息 ID 已用于不同内容");
+            return existing.get();
+        }
         limiter.check("shop-message", actorId, 60);
-        return conversations.addMessage(conversation.id(), actorId, clean(body, null));
+        return conversations.addMessage(conversation.id(), actorId, value, clientId);
     }
 
     @Transactional
