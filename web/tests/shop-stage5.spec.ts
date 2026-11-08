@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { expectChatPanelsScrollable } from "./chat-layout";
 
 const password = "ShopStage5Pass123!";
 
@@ -113,6 +114,7 @@ test("不同用户与商家订单消息隔离，医生咨询不出现在商家�
   await expect(page.locator(".chat-peer-head")).toBeInViewport();
   await expect(page.locator(".chat-safety")).toBeInViewport();
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  await expectChatPanelsScrollable(page);
   await page.getByRole("button", { name: "退出登录" }).click();
 
   await login(page, "USER", userA);

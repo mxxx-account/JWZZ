@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectChatPanelsScrollable } from "./chat-layout";
 
 test("患者录入、生成报告、授权咨询，医生接单回复，撤销授权", async ({ page, browser }) => {
   test.setTimeout(120_000);
@@ -77,6 +78,7 @@ test("患者录入、生成报告、授权咨询，医生接单回复，撤销�
   await expect(page.locator(".chat-peer-head")).toBeInViewport();
   await expect(page.locator(".chat-safety")).toBeInViewport();
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  await expectChatPanelsScrollable(page);
 
   const doctorContext = await browser.newContext();
   const doctor = await doctorContext.newPage();
