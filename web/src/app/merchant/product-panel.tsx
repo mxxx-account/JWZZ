@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { api, type InventoryLedger, type MerchantProduct, type ProductTemplate } from "@/lib/api";
 
 const categories = ["健康器械", "日常用品", "营养补充"];
@@ -14,7 +14,8 @@ function priceToCents(input: string): number | null {
   return cents >= 1 && cents <= 100_000_000 ? cents : null;
 }
 
-export function ProductPanel({ storeId }: { storeId: number }) {
+export function ProductPanel({ storeId, refreshRevision }: { storeId: number; refreshRevision: number }) {
+  const refreshSequence = useRef(0);
   const [products, setProducts] = useState<MerchantProduct[]>([]);
   const [templates, setTemplates] = useState<ProductTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,17 +30,23 @@ export function ProductPanel({ storeId }: { storeId: number }) {
   const [ledgerId, setLedgerId] = useState<number | null>(null);
   const [ledger, setLedger] = useState<InventoryLedger[]>([]);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
+    const sequence = ++refreshSequence.current;
     try {
       const [productResult, templateResult] = await Promise.all([
         api<MerchantProduct[]>("/api/merchant/products"), api<ProductTemplate[]>("/api/merchant/templates"),
       ]);
-      setProducts(productResult); setTemplates(templateResult); setError("");
-    } catch { setError("商品资料读取失败，请刷新页面重试。"); }
-    finally { setLoading(false); }
-  }
+      if (sequence === refreshSequence.current) {
+        setProducts(productResult); setTemplates(templateResult); setError("");
+      }
+    } catch { if (sequence === refreshSequence.current) setError("商品资料读取失败，请点击刷新商品与库存重试。"); }
+    finally { if (sequence === refreshSequence.current) setLoading(false); }
+  }, []);
 
-  useEffect(() => { void refresh(); }, [storeId]);
+  useEffect(() => {
+    void refresh();
+    return () => { refreshSequence.current++; };
+  }, [storeId, refreshRevision, refresh]);
 
   async function run(action: () => Promise<unknown>, success: string): Promise<boolean> {
     setBusy(true); setError(""); setMessage("");
@@ -98,7 +105,7 @@ export function ProductPanel({ storeId }: { storeId: number }) {
   const availableTemplates = templates.filter(item => !products.some(product => product.templateId === item.id));
 
   return <section className="workspace-panel merchant-products" aria-label="商品与库存管理">
-    <div className="merchant-panel-heading"><div><p className="pharmacy-kicker">PRODUCTS & STOCK</p><h2>商品与库存管理</h2></div><span className="merchant-store-status">{products.length} 项商品</span></div>
+    <div className="merchant-panel-heading"><div><p className="pharmacy-kicker">PRODUCTS & STOCK</p><h2>商品与库存管理</h2></div><span className="merchant-store-status">{products.length} 项商品</span><button type="button" disabled={busy} onClick={() => void refresh()}>刷新商品与库存</button></div>
     <p className="note">系统预置三项演示器械，价格可修改，初始库存为 0、默认未上架。这里的“上架”仅用于商家后台演示；草稿店铺不会出现在用户药店页。</p>
     {message && <p role="status" className="notice">{message}</p>}
     {error && <p role="alert" className="error">{error}</p>}

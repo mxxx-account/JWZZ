@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AppNav } from "../app-nav";
 import { api, ApiError, homeForRole, type CurrentUser, type MerchantStore } from "@/lib/api";
@@ -19,6 +19,8 @@ export default function MerchantPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [inventoryRevision, setInventoryRevision] = useState(0);
+  const invalidateInventory = useCallback(() => setInventoryRevision(value => value + 1), []);
 
   useEffect(() => {
     api<CurrentUser>("/api/auth/me").then(async current => {
@@ -81,7 +83,7 @@ export default function MerchantPage() {
       {message && <p role="status" className="notice">{message}</p>}
       {error && <p role="alert" className="error">{error}</p>}
     </section>}
-    {store && <ProductPanel storeId={store.id} />}
-    {store && <OrderPanel />}
+    {store && <ProductPanel storeId={store.id} refreshRevision={inventoryRevision} />}
+    {store && <OrderPanel onInventoryChanged={invalidateInventory} />}
   </main></>;
 }

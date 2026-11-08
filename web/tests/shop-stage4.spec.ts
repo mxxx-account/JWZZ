@@ -66,7 +66,37 @@ test("演示订单可取消释放库存、再次下单模拟支付并由商家�
   await expect(paid).toBeVisible();
   await paid.getByRole("button", { name: "查看明细" }).click();
   await expect(page.locator(".merchant-order-detail")).toContainText("电子血压计");
-  await paid.getByRole("button", { name: "接受演示订单" }).click();
-  await expect(page.locator(".merchant-order-list")).toContainText("已接单");
+  await expect(product).toContainText("已预留：1");
+  let releaseOld!: () => void, markCaptured!: () => void;
+  const oldResponseGate = new Promise<void>(resolve => { releaseOld = resolve; });
+  const captured = new Promise<void>(resolve => { markCaptured = resolve; });
+  let delayed = false;
+  await page.route("**/api/merchant/products", async route => {
+    if (!delayed && route.request().method() === "GET") {
+      delayed = true;
+      const response = await route.fetch();
+      markCaptured();
+      await oldResponseGate;
+      await route.fulfill({ response });
+    } else await route.continue();
+  });
+  try {
+    await page.getByRole("button", { name: "刷新商品与库存" }).click();
+    await captured;
+    await paid.getByRole("button", { name: "接受演示订单" }).click();
+    await expect(page.locator(".merchant-order-list")).toContainText("已接单");
+    await expect(product).toContainText("已预留：0");
+    const lateResponse = page.waitForResponse(response => response.url().endsWith("/api/merchant/products"));
+    releaseOld(); await lateResponse;
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(product).toContainText("已预留：0");
+  } finally { releaseOld(); await page.unroute("**/api/merchant/products"); }
+  await page.route("**/api/merchant/products", route => route.abort("connectionreset"));
+  await page.getByRole("button", { name: "刷新商品与库存" }).click();
+  await expect(page.locator(".merchant-products [role=alert]")).toContainText("刷新商品与库存");
+  await page.unroute("**/api/merchant/products");
+  await page.getByRole("button", { name: "刷新商品与库存" }).click();
+  await expect(page.locator(".merchant-products [role=alert]")).toHaveCount(0);
+  await expect(product).toContainText("已预留：0");
   await page.getByRole("button", { name: "暂停演示营业" }).click();
 });

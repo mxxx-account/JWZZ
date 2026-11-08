@@ -8,7 +8,7 @@ const statusText: Record<ShopOrder["status"], string> = {
   CANCELLED: "用户已取消", EXPIRED: "超时关闭",
 };
 
-export function OrderPanel() {
+export function OrderPanel({ onInventoryChanged }: { onInventoryChanged: () => void }) {
   const [orders, setOrders] = useState<ShopOrder[]>([]);
   const [selected, setSelected] = useState<ShopOrderDetail | null>(null);
   const [busy, setBusy] = useState(false);
@@ -32,6 +32,7 @@ export function OrderPanel() {
     try {
       const result = await api<ShopOrderDetail>(`/api/merchant/orders/${id}/accept`, "POST");
       setSelected(result);
+      onInventoryChanged();
       setMessage(`订单 #${result.order.id} 已演示接单，预留库存转为已售。`);
       await reload();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "接单失败。"); }
