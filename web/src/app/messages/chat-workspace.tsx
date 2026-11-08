@@ -20,7 +20,7 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const bottom = useRef<HTMLDivElement>(null);
+  const thread = useRef<HTMLDivElement>(null);
 
   const refreshList = useCallback(async () => {
     const next = await api<Conversation[]>("/api/messages/conversations");
@@ -72,7 +72,9 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
     return () => window.clearInterval(timer);
   }, [user, role, activeId, refreshList, refreshDetail]);
 
-  useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [detail?.messages.length, activeId]);
+  useEffect(() => {
+    if (thread.current) thread.current.scrollTop = thread.current.scrollHeight;
+  }, [detail?.messages.length, activeId]);
 
   useEffect(() => {
     if (!notice) return;
@@ -114,7 +116,7 @@ export function ChatWorkspace({ role }: { role: "USER" | "DOCTOR" }) {
       <section className="chat-main" aria-label="聊天内容">
         {current ? <><div className="chat-peer-head"><span className="chat-avatar" aria-hidden="true">{current.peerName.slice(0, 1)}</span><div><h2>{current.peerName}</h2><p>{current.peerSpecialty in specialtyLabels ? specialtyLabels[current.peerSpecialty as keyof typeof specialtyLabels] : current.peerSpecialty} · 报告 #{current.reportId} · {current.peerOnline ? "页面活跃" : "当前离线"}</p></div><span className="chat-status">{current.status === "OPEN" ? "待医生接受" : "对话中"}</span></div>
           <div className="chat-safety">本页面仅用于项目流程演示，不提供正式诊断、处方或急症响应。如出现胸痛、严重呼吸困难等急症，请及时寻求线下急救。</div>
-          <div className="chat-thread">{detail?.messages.map(message => <div key={message.id} className={`chat-row ${message.senderId === user?.id ? "mine" : "theirs"}`}><div className="chat-bubble">{message.body}</div><small>{time(message.createdAt)}</small></div>)}<div ref={bottom} /></div>
+          <div className="chat-thread" ref={thread}>{detail?.messages.map(message => <div key={message.id} className={`chat-row ${message.senderId === user?.id ? "mine" : "theirs"}`}><div className="chat-bubble">{message.body}</div><small>{time(message.createdAt)}</small></div>)}</div>
           <div className="chat-compose">
             <textarea aria-label="输入消息" maxLength={2000} value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} disabled={!current.canSend || busy} placeholder={current.canSend ? "输入消息… Enter 发送，Shift+Enter 换行" : role === "DOCTOR" ? "请先在首页接受咨询" : "报告授权已撤销，暂不能继续发送"}/>
             <div className="chat-compose-foot"><small>异步消息 · 不保证医生即时回复</small><button disabled={busy || !current.canSend || !draft.trim()} onClick={send}>发送</button></div>

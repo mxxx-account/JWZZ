@@ -73,6 +73,10 @@ test("患者录入、生成报告、授权咨询，医生接单回复，撤销�
   await expect(page).toHaveURL(/\/patient\/messages\?conversation=\d+/);
   const conversationId = new URL(page.url()).searchParams.get("conversation");
   await expect(page.locator(".chat-bubble").first()).toHaveText("您好，请帮我看看我的指标报告！");
+  await expect(page.getByRole("link", { name: "查看商家订单消息" })).toBeInViewport();
+  await expect(page.locator(".chat-peer-head")).toBeInViewport();
+  await expect(page.locator(".chat-safety")).toBeInViewport();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
 
   const doctorContext = await browser.newContext();
   const doctor = await doctorContext.newPage();

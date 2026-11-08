@@ -110,6 +110,9 @@ test("不同用户与商家订单消息隔离，医生咨询不出现在商家�
   await page.getByLabel("输入商家消息").fill("商家甲已经看到订单问题");
   await page.getByRole("button", { name: "发送", exact: true }).click();
   await expect(page.locator(".chat-thread")).toContainText("商家甲已经看到订单问题");
+  await expect(page.locator(".chat-peer-head")).toBeInViewport();
+  await expect(page.locator(".chat-safety")).toBeInViewport();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
   await page.getByRole("button", { name: "退出登录" }).click();
 
   await login(page, "USER", userA);

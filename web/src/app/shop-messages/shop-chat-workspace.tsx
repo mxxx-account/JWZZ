@@ -20,7 +20,7 @@ export function ShopChatWorkspace({ role }: { role: "USER" | "MERCHANT" }) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const bottom = useRef<HTMLDivElement>(null);
+  const thread = useRef<HTMLDivElement>(null);
 
   const refreshList = useCallback(async () => {
     const next = await api<ShopConversation[]>(endpoint);
@@ -65,7 +65,9 @@ export function ShopChatWorkspace({ role }: { role: "USER" | "MERCHANT" }) {
     return () => window.clearInterval(timer);
   }, [user, activeId, refreshList, refreshDetail]);
 
-  useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [detail?.messages.length, activeId]);
+  useEffect(() => {
+    if (thread.current) thread.current.scrollTop = thread.current.scrollHeight;
+  }, [detail?.messages.length, activeId]);
 
   async function send() {
     const body = draft.trim();
@@ -99,7 +101,7 @@ export function ShopChatWorkspace({ role }: { role: "USER" | "MERCHANT" }) {
       <section className="chat-main" aria-label="商家聊天内容">
         {current ? <><div className="chat-peer-head"><span className="chat-avatar" aria-hidden="true">{current.peerName.slice(0, 1)}</span><div><h2>{current.peerName}</h2><p>关联演示订单 #{current.orderId} · {current.orderStatus}</p></div><span className="chat-status">订单消息</span></div>
           <div className="chat-safety">仅讨论此演示订单，不提供医疗诊断或用药指导。请勿发送体检报告、病历、处方或其他敏感健康信息。</div>
-          <div className="chat-thread">{detail?.messages.map(message => <div key={message.id} className={`chat-row ${message.senderId === user?.id ? "mine" : "theirs"}`}><div className="chat-bubble">{message.body}</div><small>{time(message.createdAt)}</small></div>)}<div ref={bottom} /></div>
+          <div className="chat-thread" ref={thread}>{detail?.messages.map(message => <div key={message.id} className={`chat-row ${message.senderId === user?.id ? "mine" : "theirs"}`}><div className="chat-bubble">{message.body}</div><small>{time(message.createdAt)}</small></div>)}</div>
           <div className="chat-compose"><textarea aria-label="输入商家消息" maxLength={2000} value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} placeholder="输入订单相关消息… Enter 发送，Shift+Enter 换行" disabled={busy}/><div className="chat-compose-foot"><small>异步消息 · 不保证即时回复</small><button onClick={() => void send()} disabled={busy || !draft.trim()}>发送</button></div></div>
         </> : <div className="chat-placeholder"><span>✉</span><h2>选择订单会话</h2><p>{role === "USER" ? "在药店的我的订单中点击“联系商家”。" : "用户从订单发起消息后，会话会出现在左侧。"}</p><Link href={role === "USER" ? "/patient/pharmacy" : "/merchant"}>返回{role === "USER" ? "药店" : "首页"}</Link></div>}
       </section>

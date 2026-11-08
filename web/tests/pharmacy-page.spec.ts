@@ -9,6 +9,7 @@ async function openShop(page: Page) {
   await page.getByRole("button", { name: "注册并登录" }).click();
   await page.getByRole("link", { name: "药店" }).click();
   await expect(page).toHaveURL(/\/patient\/pharmacy$/);
+  await expect(page.locator(".app-nav a")).toHaveText(["见微知著", "首页", "咨询消息", "药店", "商家消息"]);
   await expect(page.getByRole("heading", { name: "健康用品与演示店铺" })).toBeVisible();
   await expect(page.getByLabel("搜索商品或店铺")).toBeEnabled();
   await expect(page.getByRole("heading", { name: "常见健康用品" })).toBeVisible();

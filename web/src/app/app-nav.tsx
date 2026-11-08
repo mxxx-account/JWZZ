@@ -11,10 +11,10 @@ export function AppNav({ role, active }: { role: Role; active: "home" | "message
   return <header className="chat-nav app-nav">
     <Link className="chat-brand" href={home}>见微知著</Link>
     <Link aria-current={active === "home" ? "page" : undefined} href={home}>首页</Link>
-    {role !== "MERCHANT" && <Link aria-current={active === "messages" ? "page" : undefined} href={messages}>消息</Link>}
+    {role !== "MERCHANT" && <Link aria-current={active === "messages" ? "page" : undefined} href={messages}>咨询消息</Link>}
+    {role === "USER" && <Link aria-current={active === "pharmacy" ? "page" : undefined} href="/patient/pharmacy">药店</Link>}
     {role === "USER" && <Link aria-current={active === "shop-messages" ? "page" : undefined} href="/patient/shop-messages">商家消息</Link>}
     {role === "MERCHANT" && <Link aria-current={active === "shop-messages" ? "page" : undefined} href="/merchant/messages">消息</Link>}
-    {role === "USER" && <Link aria-current={active === "pharmacy" ? "page" : undefined} href="/patient/pharmacy">药店</Link>}
     <button onClick={async () => { await api<void>("/api/auth/logout", "POST"); router.replace("/"); }}>退出登录</button>
   </header>;
 }
