@@ -1,43 +1,85 @@
 # 见微知著（JWZZ）
 
-体检指标解读与健康风险管理平台。第一版以血压、血糖、血脂的录入、规则化解读、历史趋势和双角色报告查看为目标。项目中的提示是健康信息展示，不是疾病诊断。
+见微知著是一个面向本地演示的健康记录、报告咨询与健康用品商城平台。用户可以录入体检指标、查看历史趋势、生成报告并授权给医生；也可以在演示店铺搜索商品、下单和联系商家。项目包含用户、医生、商家三端，使用同一套 Web 前端和业务后端。
 
-## 新版项目
+> **项目边界**：指标解读是待临床审核的规则预览，不是诊断或用药建议。医生账号用于演示，未做资质核验。商城不展示定位或真实附近药店，支付、接单均为模拟，不涉及真实资金、处方、发货或退款。请使用虚构账号和数据。
 
-- `web/`：Next.js、React、TypeScript 前端
-- `server/`：Java、Spring Boot 业务后端
-- `docs/`：产品范围、架构与实施清单
+## 当前功能
 
-此前的 `src/`、`backend/`、`desktop/`、`models/`、`reports/` 暂作 DKD 模型与 Electron 原型研究资料保留。原始 CSV 不进入 Git 仓库。现有模型尚未接入新版用户评估流程。
+| 角色 | 可以做什么 |
+| --- | --- |
+| 用户 | 录入血压、血糖、血脂，查看趋势和报告档案；按报告授权／撤权、提交咨询、查看医生回复；搜索演示商品和店铺，管理单店购物车、模拟下单／支付并联系商家。 |
+| 医生 | 查看获授权的报告和待接受咨询，接受后回复；用户撤权后不能继续访问对应报告和会话。 |
+| 商家 | 创建演示店铺，管理商品、上架和库存，接受已模拟支付的订单，处理订单消息；不能访问医疗报告或医生咨询。 |
 
-开发说明见 [docs/development.md](docs/development.md)，任务清单见 [docs/implementation-plan.md](docs/implementation-plan.md)，输入设计见 [docs/indicator-dictionary.md](docs/indicator-dictionary.md)。报告与趋势验收见 [docs/stage4-acceptance.md](docs/stage4-acceptance.md)，演示咨询与 Redis 验收见 [docs/stage5-acceptance.md](docs/stage5-acceptance.md)。规则仍是待临床审核的研发预览。
+- **报告与咨询**：报告保留生成时的数据与规则版本。同一次录入重复生成报告会返回同一份；授权以单份报告为单位。咨询消息和订单消息是独立会话，支持未读状态及重试去重。
+- **订单与库存**：购物车不预留库存；下单时服务端在事务内核对价格与可售库存。待支付订单取消或超时后释放预留；商家接单后页面自动重新读取库存，不用手动刷新整页。
 
-当前 Web 平台的[架构图](docs/architecture.md)、[数据库设计图](docs/database-design.md)、[接口文档](docs/api-reference.md)、[测试与压测报告](docs/test-report.md)、[Docker Compose 验收说明](docs/compose-validation.md)、[技术难点与取舍](docs/technical-tradeoffs.md)及[演示脚本](docs/demo-script.md)已单独整理。
+## 技术与目录
 
-近期登录、医生授权首页与统一导航的排查见[问题记录](docs/auth-doctor-home-fixes.md)。
-医生首页“待咨询→接受→进入消息”的当前流程见[验收记录](docs/doctor-pending-acceptance.md)。
-用户首页侧栏工作区、历史报告筛选和分页见[验收说明](docs/patient-workspace-acceptance.md)。
-药店探索页的定位、地图来源、演示商品和验收边界见[药店页说明](docs/pharmacy-acceptance.md)。
-药店下一阶段的“公开地图找店”和“商家入驻＋库存”方案比较见[方向取舍](docs/pharmacy-direction.md)。
-药店页“定位成功但看不出地区”的原因与修复见[问题记录](docs/pharmacy-location-bug-record.md)。
+- 前端：Next.js、React、TypeScript；浏览器回归使用 Playwright。
+- 后端：Java 17、Spring Boot、Spring Security；使用会话 Cookie 与 CSRF 校验。
+- 数据：MySQL 8、Flyway V1–V12；Redis 可选，用于缓存和限流，关闭或不可用时支持本机降级，不能视为跨实例一致限流。
 
-## 旧模型原型
+| 路径 | 内容 |
+| --- | --- |
+| `web/` | 三角色 Web 界面、浏览器测试和生产包冒烟测试 |
+| `server/` | 业务 API、数据库迁移、后端与 MySQL 集成测试 |
+| `scripts/`、`docs/` | 启动及验收脚本、架构、接口和测试报告 |
+| `src/`、`backend/`、`desktop/`、`models/` | 保留的 DKD 模型和 Electron 原型，不是当前 Web 服务的依赖 |
 
-本仓库先完成可复现的机器学习模型，再接入 Electron 桌面客户端。
+## 本地启动（Windows PowerShell）
 
-## 当前研究定位
+准备 Node.js ≥ 20.9、JDK 17、Maven 3.9+ 和 MySQL 8。先创建 `jwzz` 数据库与仅有该库权限的账号。Redis 不必安装才能体验；若暂未启动，在本地配置中将 `JWZZ_REDIS_ENABLED` 设为 `false`。
 
-这是基于整理后 NHANES 数据的横断面风险筛查模型原型，不是纵向发病预测模型，也不能用于临床诊断或治疗决策。
-
-主模型不会使用 `UACR`、`eGFR` 或 `serum_creatinine` 作为输入，因为它们与 `DKD` 标签存在直接关系，会造成标签泄露。
-
-## 运行顺序
+后端终端（从项目根目录开始）：
 
 ```powershell
-.\.venv\Scripts\python.exe src\audit_data.py
-.\.venv\Scripts\python.exe src\train.py
-.\.venv\Scripts\python.exe src\explain_model.py
-.\.venv\Scripts\python.exe src\generate_model_card.py
+cd server
+if (-not (Test-Path .\.env.local.ps1)) { Copy-Item .\env.example.ps1 .\.env.local.ps1 }
+# 编辑 .env.local.ps1，填写本机数据库凭据和演示医生密码，再执行：
+. .\.env.local.ps1
+mvn spring-boot:run
 ```
 
-审计和训练产物会写入 `reports/`，可部署模型会写入 `models/`。
+后端启动时由 Flyway 执行数据库迁移。配置示例启用 `dev`，用于本地演示医生／商家注册和规则预览；本地配置文件不应提交到 Git。
+
+前端终端（从项目根目录开始）：
+
+```powershell
+cd web
+npm ci
+npm run dev
+```
+
+访问 [Web 首页](http://localhost:3000)，后端健康接口为 [`/api/health`](http://localhost:8080/api/health)。已有依赖时可直接运行 `npm run dev`。更多环境设置见[本地开发说明](docs/development.md)。如选择容器路线，请先读 [Docker Compose 验收说明](docs/compose-validation.md)；不要在本机 MySQL 或 Redis 已占用相同端口时重复启动容器依赖。
+
+## 演示路线
+
+1. **报告咨询**：用户录入指标 → 在「最近录入」生成报告 → 授权给演示医生并提交咨询 → 医生接受并回复 → 用户撤权后验证医生无法继续访问。
+2. **订单库存**：商家备货、上架并开启演示营业 → 用户在「药店」搜索并提交订单、模拟支付 → 商家接单 → 查看预留库存自动更新。也可以验证待支付订单取消后库存释放。
+
+详细操作见[演示脚本](docs/demo-script.md)、[订单验收](docs/shop-stage4-acceptance.md)和[订单消息验收](docs/shop-stage5-acceptance.md)。
+
+## 测试与验收
+
+前后端运行后，从项目根目录执行 `./scripts/run_quality_checks.ps1`。该脚本使用本地配置运行后端测试、接口脚本、类型检查和浏览器回归；浏览器用例需要本机 Microsoft Edge，部分医生流程需要演示账号。请仅连接本地开发或测试库运行。
+
+[2026-11-08 最终回归](docs/testing/2026-11-08-final-regression.md)记录：后端 **27 项**、开发模式浏览器 **21 项**、生产前端包 **4 项**以及 **5 套接口脚本**全部通过。消息重试去重和接单后库存同步均已通过回归。完整 Docker Compose 空库启动仍因镜像下载超时未验收；HTTP 探针响应差异仍待复核。上述结果不等同于正式上线验收。
+
+更多资料：[架构设计](docs/architecture.md) · [数据库设计](docs/database-design.md) · [接口文档](docs/api-reference.md) · [指标字典](docs/indicator-dictionary.md) · [测试与压测汇总](docs/test-report.md) · [技术取舍](docs/technical-tradeoffs.md)
+
+## 旧 DKD 研究原型
+
+基于整理后 NHANES 数据的横断面风险筛查原型，**未接入当前 Web 用户评估**，不是纵向发病预测或临床诊断工具。`UACR`、`eGFR`、`serum_creatinine` 与 DKD 标签直接相关，不作为模型输入，以避免标签泄露。
+
+复现实验需要自行准备 `nhanes_dkd_dataset.csv`（未纳入 Git），并按 `requirements.txt` 安装 Python 依赖。将数据放在项目根目录，在根目录依次运行：
+
+```powershell
+python src/audit_data.py
+python src/train.py
+python src/explain_model.py
+python src/generate_model_card.py
+```
+
+报告写入 `reports/`，模型产物写入 `models/`。启动当前 Web 项目不需要训练模型或准备这份数据。
