@@ -33,6 +33,17 @@ export type Report = {
   };
   createdAt: string;
 };
+export type BloodPressureReading = { measuredAt: string; context: "HOME" | "CLINIC"; systolic: number; diastolic: number };
+export type ReportEvidence = {
+  reportId: number;
+  status: "AVAILABLE" | "NO_COMPARABLE_HISTORY" | "UNSUPPORTED_CATEGORY" | "UNSUPPORTED_SNAPSHOT";
+  indicators: { code: string; label: string; unit: string; description: string }[];
+  current: BloodPressureReading | null;
+  previous: BloodPressureReading | null;
+  change: { systolic: number; diastolic: number } | null;
+  notice: string;
+};
+export type ReportAssistantDraft = { reportId: number; mode: "TEMPLATE"; questions: string[]; draft: string };
 export type Grant = { doctorId: number; doctorEmail: string };
 export type Specialty = "GENERAL" | "CARDIOLOGY" | "ENDOCRINOLOGY";
 export type Doctor = { id: number; email: string; displayName: string; specialty: Specialty; lastSeenAt: string | null; online: boolean };
@@ -52,21 +63,22 @@ export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-async function csrfToken(): Promise<string> {
-  const response = await fetch(`${base}/api/auth/csrf`, { credentials: "include", cache: "no-store" });
+async function csrfToken(signal?: AbortSignal): Promise<string> {
+  const response = await fetch(`${base}/api/auth/csrf`, { credentials: "include", cache: "no-store", signal });
   if (!response.ok) throw new ApiError(response.status, "无法获取安全令牌，请确认后端正在运行。");
   return (await response.json()).token;
 }
 
-export async function api<T>(path: string, method = "GET", body?: unknown): Promise<T> {
+export async function api<T>(path: string, method = "GET", body?: unknown, signal?: AbortSignal): Promise<T> {
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  if (method !== "GET") headers["X-XSRF-TOKEN"] = await csrfToken();
+  if (method !== "GET") headers["X-XSRF-TOKEN"] = await csrfToken(signal);
   const response = await fetch(`${base}${path}`, {
     method,
     headers,
     credentials: "include",
     cache: "no-store",
+    signal,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!response.ok) {

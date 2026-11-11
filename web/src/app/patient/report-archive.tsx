@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, type Consultation, type Doctor, type Grant, type Report } from "@/lib/api";
 import { DoctorChooser } from "./doctor-chooser";
 import { ReportContent } from "../report-content";
+import { CONSULTATION_QUESTION_LIMIT, ReportAssistant } from "./report-assistant";
 
 type Summary = { id: number; title: string | null; category: string | null; createdAt: string };
 type Page = { items: Summary[]; total: number; page: number; size: number };
@@ -20,7 +21,7 @@ export function ReportArchive({ refreshKey, focusId }: { refreshKey: number; foc
   const [page, setPage] = useState(0);
   const [result, setResult] = useState<Page | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [report, setReport] = useState<Report | null>(null);
+  const [loadedReport, setReport] = useState<Report | null>(null);
   const [contextReports, setContextReports] = useState<Report[]>([]);
   const [grants, setGrants] = useState<Grant[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -32,6 +33,8 @@ export function ReportArchive({ refreshKey, focusId }: { refreshKey: number; foc
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [busy, setBusy] = useState(false);
   const [reload, setReload] = useState(0);
+  const activeDetail = useRef<symbol | null>(null);
+  const report = loadedReport?.id === selectedId ? loadedReport : null;
 
   useEffect(() => {
     let cancelled = false;
@@ -51,9 +54,11 @@ export function ReportArchive({ refreshKey, focusId }: { refreshKey: number; foc
   }, [filters, page, refreshKey, reload]);
 
   useEffect(() => {
-    if (selectedId === null) { setReport(null); setGrants([]); return; }
-    let cancelled = false;
-    setLoadingDetail(true); setReport(null); setQuestion(""); setSelectedDoctorId(null);
+    setReport(null); setGrants([]); setQuestion(""); setSelectedDoctorId(null); setBusy(false);
+    setLoadingDetail(selectedId !== null);
+    if (selectedId === null) return;
+    const detail = Symbol();
+    activeDetail.current = detail;
     Promise.allSettled([
       api<Report>(`/api/reports/${selectedId}`),
       api<Grant[]>(`/api/reports/${selectedId}/grants`),
@@ -61,16 +66,16 @@ export function ReportArchive({ refreshKey, focusId }: { refreshKey: number; foc
       api<Report[]>("/api/reports/context"),
       api<Consultation[]>("/api/consultations"),
     ]).then(([nextReport, nextGrants, nextDoctors, nextContext, nextConsultations]) => {
-      if (cancelled) return;
+      if (activeDetail.current !== detail) return;
       if (nextReport.status === "rejected") throw nextReport.reason;
       if (nextGrants.status === "rejected") throw nextGrants.reason;
       setReport(nextReport.value); setGrants(nextGrants.value);
       setDoctors(nextDoctors.status === "fulfilled" ? nextDoctors.value : []);
       setContextReports(nextContext.status === "fulfilled" ? nextContext.value : []);
       setConsultations(nextConsultations.status === "fulfilled" ? nextConsultations.value : []);
-    }).catch(error => { if (!cancelled) setMessage(error instanceof Error ? error.message : "无法加载报告详情。"); })
-      .finally(() => { if (!cancelled) setLoadingDetail(false); });
-    return () => { cancelled = true; };
+    }).catch(error => { if (activeDetail.current === detail) setMessage(error instanceof Error ? error.message : "无法加载报告详情。"); })
+      .finally(() => { if (activeDetail.current === detail) setLoadingDetail(false); });
+    return () => { activeDetail.current = null; };
   }, [selectedId]);
 
   useEffect(() => {
@@ -90,20 +95,28 @@ export function ReportArchive({ refreshKey, focusId }: { refreshKey: number; foc
     setDraftFilters(initialFilters); setFilters(initialFilters); setPage(0);
   }
 
-  async function updateGrants() {
-    if (selectedId === null) return;
-    setGrants(await api<Grant[]>(`/api/reports/${selectedId}/grants`));
-  }
-
-  async function action(run: () => Promise<unknown>, success: string) {
+  async function action<T>(run: () => Promise<T>, success: string, after?: (result: T) => void) {
+    const detail = activeDetail.current;
+    if (!detail || !report || busy) return;
     setBusy(true); setMessage("");
-    try { await run(); await updateGrants(); setMessage(success); }
-    catch (error) { setMessage(error instanceof Error ? error.message : "操作失败。"); }
-    finally { setBusy(false); }
+    try {
+      const result = await run();
+      if (activeDetail.current !== detail) return;
+      const nextGrants = await api<Grant[]>(`/api/reports/${report.id}/grants`);
+      if (activeDetail.current !== detail) return;
+      setGrants(nextGrants);
+      after?.(result);
+      setMessage(success);
+    } catch (error) {
+      if (activeDetail.current === detail) setMessage(error instanceof Error ? error.message : "操作失败。");
+    } finally {
+      if (activeDetail.current === detail) setBusy(false);
+    }
   }
 
   async function askDoctor() {
-    if (!report) return;
+    const detail = activeDetail.current;
+    if (!detail || !report || busy) return;
     const doctorId = selectedDoctorId ?? grants[0]?.doctorId;
     if (!doctorId || !grants.some(grant => grant.doctorId === doctorId)) {
       setMessage("请先选择并授权要咨询的医生。"); return;
@@ -111,9 +124,12 @@ export function ReportArchive({ refreshKey, focusId }: { refreshKey: number; foc
     setBusy(true); setMessage("");
     try {
       const created = await api<Consultation>("/api/consultations", "POST", { reportId: report.id, doctorId, question: question.trim() });
-      router.push(`/patient/messages?conversation=${created.id}`);
-    } catch (error) { setMessage(error instanceof Error ? error.message : "咨询提交失败。"); }
-    finally { setBusy(false); }
+      if (activeDetail.current === detail) router.push(`/patient/messages?conversation=${created.id}`);
+    } catch (error) {
+      if (activeDetail.current === detail) setMessage(error instanceof Error ? error.message : "咨询提交失败。");
+    } finally {
+      if (activeDetail.current === detail) setBusy(false);
+    }
   }
 
   const totalPages = Math.ceil((result?.total ?? 0) / (result?.size ?? 12));
@@ -143,12 +159,13 @@ export function ReportArchive({ refreshKey, focusId }: { refreshKey: number; foc
         {report && <>
           <div className="report-heading"><h2>{report.content.title ?? `报告 #${report.id}`}</h2><small>#{report.id} · {new Date(report.createdAt).toLocaleString("zh-CN")}</small></div>
           <ReportContent report={report} />
+          <ReportAssistant key={report.id} reportId={report.id} canFill={grants.length > 0} busy={busy} question={question} onFill={setQuestion} />
           <p className="note">当前授权：{grants.length ? grants.map(grant => doctors.find(doctor => doctor.id === grant.doctorId)?.displayName ?? grant.doctorEmail).join("、") : "无"}</p>
           <DoctorChooser report={report} allReports={contextReports.length ? contextReports : [report]} doctors={doctors} grants={grants} selectedId={selectedDoctorId} busy={busy} onSelect={setSelectedDoctorId} onGrant={doctor => action(() => api<Grant>(`/api/reports/${report.id}/grants`, "POST", { doctorEmail: doctor.email }), "授权成功，可以向这位医生提交咨询。")}
-            onGrantEmail={email => action(async () => { const granted = await api<Grant>(`/api/reports/${report.id}/grants`, "POST", { doctorEmail: email }); setSelectedDoctorId(granted.doctorId); }, "授权成功，可以向这位医生提交咨询。")} />
+            onGrantEmail={email => action(() => api<Grant>(`/api/reports/${report.id}/grants`, "POST", { doctorEmail: email }), "授权成功，可以向这位医生提交咨询。", granted => setSelectedDoctorId(granted.doctorId))} />
           {grants.map(grant => <button className="secondary" key={grant.doctorId} disabled={busy} onClick={() => action(() => api<void>(`/api/reports/${report.id}/grants/${grant.doctorId}`, "DELETE"), "撤销成功。")}>撤销 {grant.doctorEmail} 的权限</button>)}
           <div className="consultation-area"><h3>向医生发起消息</h3><p className="note">仅演示异步消息，不是实时问诊。留空将发送默认问候语；如有急症不适，请及时线下就医。</p>
-            {grants.length ? <div className="consultation-form"><textarea aria-label={`关于报告 ${report.id} 的问题`} maxLength={1000} value={question} onChange={event => setQuestion(event.target.value)} placeholder="可填写想咨询的问题；留空则发送默认问候语" /><button disabled={busy} onClick={askDoctor}>提交咨询并打开消息</button></div>
+            {grants.length ? <div className="consultation-form"><textarea aria-label="咨询问题" maxLength={CONSULTATION_QUESTION_LIMIT} value={question} onChange={event => setQuestion(event.target.value)} placeholder="可填写想咨询的问题；留空则发送默认问候语" /><button disabled={busy} onClick={askDoctor}>提交咨询并打开消息</button></div>
               : <p className="note">先授权医生查看这份报告，才能提交咨询请求。</p>}
             {consultations.filter(item => item.reportId === report.id).map(item => <div className="consultation-item" key={item.id}><Link href={`/patient/messages?conversation=${item.id}`}>咨询 #{item.id} · {item.status === "OPEN" ? "待医生接受" : item.status === "CLAIMED" ? "医生已接受" : "查看消息"}</Link></div>)}
           </div>

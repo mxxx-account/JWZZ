@@ -1,0 +1,46 @@
+.panel {
+  margin: 22px 0;
+  padding: clamp(12px, 2vw, 20px);
+  border: 1px solid #cce4e2;
+  border-radius: 14px;
+  background: #f5fbfa;
+}
+.panel p { margin: 8px 0; }
+.heading, .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.heading { justify-content: space-between; margin-bottom: 12px; }
+.heading h3 { margin: 0; font-size: 19px; }
+.badge { padding: 4px 9px; border-radius: 100px; background: #dff2ef; color: #125c57; font-size: 12px; font-weight: 700; }
+.evidence { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+.evidence th, .evidence td { padding: 8px 5px; border-bottom: 1px solid #d7e9e7; text-align: right; overflow-wrap: anywhere; }
+.evidence th:first-child { width: 47%; text-align: left; }
+.evidence td { font-variant-numeric: tabular-nums; }
+.evidence small { display: block; color: #526978; font-size: 12px; font-weight: 400; }
+.change { background: #e6f4f1; font-weight: 700; }
+.glossary { margin: 12px 0; font-size: 14px; }
+.glossary summary { width: fit-content; color: #126a69; font-weight: 700; cursor: pointer; }
+.glossary dl { display: grid; gap: 8px; margin: 8px 0 0; }
+.glossary dt { font-weight: 700; }
+.glossary dd { margin: 3px 0 0; color: #526978; }
+.panel .notice { color: #526978; font-size: 13px; }
+.draft { margin-top: 14px; padding-top: 12px; border-top: 1px solid #d7e9e7; }
+.draft label { display: block; margin: 10px 0 6px; font-weight: 700; }
+.draft textarea {
+  display: block;
+  width: 100%;
+  min-height: 90px;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #a9c1ca;
+  border-radius: 8px;
+  background: #fff;
+  color: #173044;
+  font: inherit;
+  resize: vertical;
+}
+.suggestions { font-size: 14px; }
+.suggestions ul { margin: 5px 0 0; padding-left: 22px; line-height: 1.65; }
+.merge { margin: 12px 0 0; padding: 10px 12px; border: 1px solid #cce4e2; border-radius: 9px; background: #fff; }
+.merge p { margin-top: 0; }
+.merge button { padding: 8px 12px; }
+.feedback { color: #145952; font-size: 14px; font-weight: 600; }
+.feedback[role="alert"] { color: #8b2419; }

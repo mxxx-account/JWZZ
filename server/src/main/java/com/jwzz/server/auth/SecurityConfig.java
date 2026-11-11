@@ -53,7 +53,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/messages/**", "/api/messages").hasAnyRole("USER", "DOCTOR")
                 .requestMatchers("/api/consultations", "/api/consultations/**").hasRole("USER")
                 .requestMatchers(HttpMethod.POST, "/api/reports").hasRole("USER")
-                .requestMatchers("/api/reports/*/assistant/**").hasRole("USER")
+                .requestMatchers("/api/reports/*/assistant", "/api/reports/*/assistant/**").hasRole("USER")
                 .requestMatchers("/api/reports/**").hasAnyRole("USER", "DOCTOR")
                 .requestMatchers("/api/auth/**").authenticated()
                 .anyRequest().denyAll())
