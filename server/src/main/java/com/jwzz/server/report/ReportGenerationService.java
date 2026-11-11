@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class ReportGenerationService {
+    static final String SNAPSHOT_SCHEMA_VERSION = "indicator-report-v1";
     public record Snapshot(String schemaVersion, String title, String message, String sourceEntryId,
                            String category, String context, LocalDateTime measuredAt, LocalDateTime generatedAt,
                            Integer ageYears, Boolean pregnant, String rulesStatus, String ruleVersion,
@@ -68,7 +69,7 @@ public class ReportGenerationService {
         var prepared = new IndicatorService.PreparedEntry(entryId, request, values);
         boolean dev = environment.acceptsProfiles(Profiles.of("dev"));
         String version = dev ? DraftRuleEngine.RULE_VERSION : "no-active-rules";
-        var snapshot = new Snapshot("indicator-report-v1", "指标记录快照",
+        var snapshot = new Snapshot(SNAPSHOT_SCHEMA_VERSION, "指标记录快照",
             "仅供信息整理与研发演示；单次录入不能用于疾病诊断或治疗决策。",
             entryId, category, first.context(), first.measuredAt(), LocalDateTime.now(),
             first.ageYears(), first.pregnant(), "AWAITING_CLINICAL_REVIEW", version,

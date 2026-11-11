@@ -22,6 +22,12 @@ public class ReportStore {
             (rs, row) -> new Report(rs.getLong("id"), rs.getLong("user_id"), rs.getString("rule_set_version"), rs.getString("report_json"), rs.getTimestamp("created_at").toLocalDateTime()), id).stream().findFirst();
     }
 
+    public Optional<Report> findOwnedById(long userId, long id) {
+        return jdbc.query("SELECT id, user_id, rule_set_version, report_json, created_at FROM assessment_report WHERE user_id=? AND id=?",
+            (rs, row) -> new Report(rs.getLong("id"), rs.getLong("user_id"), rs.getString("rule_set_version"), rs.getString("report_json"), rs.getTimestamp("created_at").toLocalDateTime()),
+            userId, id).stream().findFirst();
+    }
+
     public Optional<Report> findByUserKey(long userId, String idempotencyKey) {
         return jdbc.query("SELECT id, user_id, rule_set_version, report_json, created_at FROM assessment_report WHERE user_id=? AND idempotency_key=?",
             (rs, row) -> new Report(rs.getLong("id"), rs.getLong("user_id"), rs.getString("rule_set_version"), rs.getString("report_json"), rs.getTimestamp("created_at").toLocalDateTime()),
