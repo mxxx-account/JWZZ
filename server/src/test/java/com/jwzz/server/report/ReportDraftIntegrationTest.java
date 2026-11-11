@@ -37,7 +37,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.transaction.annotation.Transactional;
 
 @EnabledIfEnvironmentVariable(named = "JWZZ_IT_DB_URL", matches = ".+")
-@SpringBootTest(properties = {"app.redis.enabled=false", "demo.doctor.email=", "demo.doctor.password="})
+@SpringBootTest(properties = {"app.redis.enabled=false", "app.agent.model-enabled=false", "demo.doctor.email=", "demo.doctor.password="})
 @AutoConfigureMockMvc
 @Transactional
 class ReportDraftIntegrationTest {
@@ -84,6 +84,7 @@ class ReportDraftIntegrationTest {
             .andExpect(header().string("Cache-Control", "no-store"))
             .andExpect(jsonPath("$.reportId").value(currentOnly))
             .andExpect(jsonPath("$.mode").value("TEMPLATE"))
+            .andExpect(jsonPath("$.modelStatus").value("NOT_REQUESTED"))
             .andExpect(jsonPath("$.questions.length()").value(2))
             .andExpect(jsonPath("$.draft").value(containsString("本次测量")))
             .andExpect(jsonPath("$.draft").value(not(containsString("上次"))));
@@ -139,8 +140,21 @@ class ReportDraftIntegrationTest {
 
         draft(ownerSession, report, "{}").andExpect(status().isBadRequest());
         draft(ownerSession, report, "{\"action\":\"SEND_CONSULTATION\"}").andExpect(status().isBadRequest());
+        draft(ownerSession, report, "{\"action\":\"PREPARE_CONSULTATION\",\"focus\":\"UNSAFE\"}").andExpect(status().isBadRequest());
+        draft(ownerSession, report, "{\"action\":\"PREPARE_CONSULTATION\",\"useModel\":\"true\"}").andExpect(status().isBadRequest());
         draft(ownerSession, glucoseReport, PREPARE).andExpect(status().isConflict());
         draft(ownerSession, oldReport, PREPARE).andExpect(status().isConflict());
+    }
+
+    @Test
+    void preservesFocusedTemplateWhenModelIsDisabledAndNoComparisonExists() throws Exception {
+        long report = generation.generate(owner.id(), bloodPressure(ANCHOR, "CLINIC")).id();
+        draft(ownerSession, report, "{\"action\":\"PREPARE_CONSULTATION\",\"focus\":\"COMPARISON\",\"useModel\":true}")
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.mode").value("TEMPLATE"))
+            .andExpect(jsonPath("$.modelStatus").value("DISABLED"))
+            .andExpect(jsonPath("$.questions[0]").value(containsString("诊室测量")))
+            .andExpect(jsonPath("$.draft").value(not(containsString("上次"))));
     }
 
     private UserStore.User syntheticUser(String role) {

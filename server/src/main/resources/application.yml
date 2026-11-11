@@ -22,3 +22,8 @@ demo:
 app:
   redis:
     enabled: ${JWZZ_REDIS_ENABLED:false}
+  agent:
+    model-enabled: ${JWZZ_AGENT_MODEL_ENABLED:false}
+    url: ${JWZZ_AGENT_URL:http://127.0.0.1:8091/v1/report-draft}
+    shared-token: ${JWZZ_AGENT_SHARED_TOKEN:}
+    timeout-ms: ${JWZZ_AGENT_TIMEOUT_MS:7000}

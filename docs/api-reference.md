@@ -20,7 +20,7 @@
 | GET `/reports/context` | 用户 | 无 | `200` 本人血压、血糖、血脂各最新一份完整报告，供科室推荐参考 |
 | GET `/reports/{id}` | 报告所有者/获授权医生 | 无 | `200` 报告；越权 404 |
 | GET `/reports/{id}/assistant/evidence` | 仅报告所有者 | 无 | `200 {reportId,status,indicators,current,previous,change,notice}`；当前仅支持血压，医生授权不包含此接口 |
-| POST `/reports/{id}/assistant` | 仅报告所有者 | `{"action":"PREPARE_CONSULTATION"}` | `200 {reportId,mode:"TEMPLATE",questions,draft}`；不支持的报告返回 409；不保存、不授权、不发送 |
+| POST `/reports/{id}/assistant` | 仅报告所有者 | `{"action":"PREPARE_CONSULTATION"}`；可选 `focus` 和 `useModel`，默认模板 | `200 {reportId,mode,modelStatus,questions,draft}`；模式为 `TEMPLATE` 或 `MODEL`；不支持的报告返回 409；不保存、不授权、不发送 |
 | GET `/doctor/reports` | 医生 | 无 | `200` 当前仍获授权的报告 |
 | GET `/reports/{id}/grants` | 报告所有者 | 无 | `200` 活跃授权医生名单 |
 | POST `/reports/{id}/grants` | 报告所有者 | `{doctorEmail}` | `200 {doctorId,doctorEmail}`；重授权恢复 |

@@ -43,7 +43,11 @@ export type ReportEvidence = {
   change: { systolic: number; diastolic: number } | null;
   notice: string;
 };
-export type ReportAssistantDraft = { reportId: number; mode: "TEMPLATE"; questions: string[]; draft: string };
+export type ReportAssistantFocus = "BALANCED" | "MEASUREMENT" | "COMPARISON" | "FOLLOW_UP";
+export type ReportAssistantDraft = { reportId: number; questions: string[]; draft: string } & (
+  | { mode: "MODEL"; modelStatus: "USED" }
+  | { mode: "TEMPLATE"; modelStatus: "NOT_REQUESTED" | "DISABLED" | "UNAVAILABLE" }
+);
 export type Grant = { doctorId: number; doctorEmail: string };
 export type Specialty = "GENERAL" | "CARDIOLOGY" | "ENDOCRINOLOGY";
 export type Doctor = { id: number; email: string; displayName: string; specialty: Specialty; lastSeenAt: string | null; online: boolean };
