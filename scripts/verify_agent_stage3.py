@@ -101,13 +101,15 @@ class Client:
             urllib.request.ProxyHandler({}), urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())
         )
 
-    def request(self, path, body=None, *, form=False, expected=200):
+    def request(self, path, body=None, *, form=False, expected=200, method=None):
         headers, data = {}, None
-        if body is not None:
+        method = method or ("POST" if body is not None else "GET")
+        if method != "GET":
             headers["X-XSRF-TOKEN"] = self.request("/api/auth/csrf")["token"]
+        if body is not None:
             headers["Content-Type"] = "application/x-www-form-urlencoded" if form else "application/json"
             data = (urllib.parse.urlencode(body) if form else json.dumps(body)).encode()
-        request = urllib.request.Request(self.base + path, data=data, headers=headers)
+        request = urllib.request.Request(self.base + path, data=data, headers=headers, method=method)
         try:
             response = self.opener.open(request, timeout=15)
         except urllib.error.HTTPError as error:
@@ -165,6 +167,46 @@ def check_model_flow(client, fake):
     assert client.request("/api/consultations") == []
     assert client.request(f"/api/reports/{report_id}/grants") == []
     print("PASS invalid model output and 429 fall back without retry, grant or consultation")
+    check_consultation_flow(client, report_id, fallback["draft"], fake)
+
+
+def check_consultation_flow(patient, report_id, fallback_draft, fake):
+    doctor = Client(patient.base)
+    doctor_email = f"agent-stage3-doctor-{uuid.uuid4().hex}@example.invalid"
+    doctor.request("/api/auth/register", {
+        "email": doctor_email, "name": "咨询回归虚构医生", "password": PASSWORD,
+        "role": "DOCTOR", "specialty": "GENERAL",
+    }, expected=201)
+    doctor.request("/api/auth/login", {"email": doctor_email, "password": PASSWORD}, form=True)
+    grants = f"/api/reports/{report_id}/grants"
+    doctor_id = patient.request(grants, {"doctorEmail": doctor_email})["doctorId"]
+    try:
+        assert patient.request("/api/consultations") == []
+        assert doctor.request("/api/doctor/consultations") == []
+        print("PASS explicit report authorization does not submit a consultation")
+
+        # Model failure must not prevent the patient from editing and submitting a template draft.
+        question = f"【用户补充：请先核对测量条件。】\n{fallback_draft}"
+        created = patient.request("/api/consultations", {
+            "reportId": report_id, "doctorId": doctor_id, "question": question,
+        }, expected=201)
+        consultation_id = created["id"]
+        conversation = f"/api/messages/conversations/{consultation_id}"
+        assert any(item["id"] == consultation_id for item in doctor.request("/api/doctor/consultations"))
+        doctor.request(conversation, expected=404)
+        doctor.request(f"/api/doctor/consultations/{consultation_id}/claim", {})
+        assert doctor.request(conversation)["messages"][0]["body"] == question
+        reply = "收到，我看到你补充的测量条件问题了。"
+        doctor.request(conversation, {"body": reply}, expected=201)
+        assert [message["body"] for message in patient.request(conversation)["messages"]] == [question, reply]
+        assert len(fake.requests) == 3, "Authorization and messaging must not call the model"
+        print("PASS edited fallback draft reaches the doctor only after submit; doctor reply reaches the patient")
+    finally:
+        patient.request(f"{grants}/{doctor_id}", expected=204, method="DELETE")
+    assert not any(item["id"] == consultation_id for item in doctor.request("/api/messages/conversations"))
+    doctor.request(conversation, expected=404)
+    doctor.request(conversation, {"body": "撤权后不应发送"}, expected=404)
+    print("PASS report revocation removes doctor chat access and rejects further replies")
 
 
 def main():

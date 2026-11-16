@@ -62,7 +62,7 @@ node node_modules/next/dist/bin/next dev --hostname localhost --port 3000
 
 ## 自动化复验
 
-以下命令使用本机 Python，无需安装依赖或提供外部 API Key。全链路脚本会启动临时 Java、Python 和本地假提供商，退出时只停止脚本自己的服务。它会在已配置的本地开发库创建一名随机 `@example.invalid` 测试用户与虚构报告，不会创建医生授权或咨询；这些测试数据留在所用开发库。
+以下命令使用本机 Python，无需安装依赖或提供外部 API Key。全链路脚本会启动临时 Java、Python 和本地假提供商，退出时只停止脚本自己的服务。它会在已配置的本地开发库创建随机 `@example.invalid` 测试用户和医生、虚构报告及咨询。脚本先断言生成草稿不会创建授权或咨询，再显式授权、提交编辑后的回退草稿、验证回复，并撤销授权；测试账号与业务记录留在所用开发库。新增断言见[面试版回归](testing/2026-11-16-demo-regression.md)。
 
 ```powershell
 # 项目根目录；先停止占用旧 JAR 的项目后端，再打包（使用当前电脑已有离线缓存）
