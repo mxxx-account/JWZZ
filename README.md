@@ -14,7 +14,6 @@
 
 - **报告与咨询**：报告保留生成时的数据与规则版本。同一次录入重复生成报告会返回同一份；授权以单份报告为单位。咨询消息和订单消息是独立会话，支持未读状态及重试去重。
 - **报告解读与咨询准备**：血压报告可对比更早的同条件记录，生成可编辑草稿。默认走 Java 模板；本地配置并主动勾选后，可通过 Python 接入外部模型来选择咨询主题。授权和提交仍由用户操作。见 [Python 模型接入与验收](docs/agent-stage3-acceptance.md)。
-- **报告解读与咨询准备**：血压报告可对比更早的同条件记录，生成可编辑草稿。默认走 Java 模板；本地配置并主动勾选后，可通过 Python 接入外部模型来选择咨询主题。授权和提交仍由用户操作。见 [Python 模型接入与验收](docs/agent-stage3-acceptance.md)。
 - **订单与库存**：购物车不预留库存；下单时服务端在事务内核对价格与可售库存。待支付订单取消或超时后释放预留；商家接单后页面自动重新读取库存，不用手动刷新整页。
 
 ## 技术与目录
@@ -28,11 +27,23 @@
 | `web/` | 三角色 Web 界面、浏览器测试和生产包冒烟测试 |
 | `server/` | 业务 API、数据库迁移、后端与 MySQL 集成测试 |
 | `ai_service/` | 可选的本机 Python 模型网关及离线测试，不是 Web 默认启动依赖 |
-| `ai_service/` | 可选的本机 Python 模型网关及离线测试，不是 Web 默认启动依赖 |
 | `scripts/`、`docs/` | 启动及验收脚本、架构、接口和测试报告 |
 | `src/`、`backend/`、`desktop/`、`models/` | 保留的 DKD 模型和 Electron 原型，不是当前 Web 服务的依赖 |
 
 ## 本地启动（Windows PowerShell）
+
+**当前电脑推荐：** 已有数据库配置、后端 JAR 和前端／Python 环境时，用 PowerShell **7.4+** 执行下列命令。首次由你在隐藏输入中填写 API Key，脚本用 Windows DPAPI 加密保存到项目目录外；以后无需重复输入 Key 或共享令牌。脚本和非敏感设置可提交 GitHub，真实凭据不提交。详见[一步一步配置与启动](docs/local-startup.md)。
+
+```powershell
+# 在项目根目录，首次执行一次（不会调用模型）
+.\scripts\setup_local_ai.ps1
+# 停止之前的前端、Java、Python 实例后；MySQL/Redis 保持原运行方式
+.\scripts\start_local.ps1 -WithAi -CheckOnly
+# 每次启动只需这一条；保持终端打开，Ctrl+C 停止本次服务
+.\scripts\start_local.ps1 -WithAi
+```
+
+不需要外部模型时运行 `./scripts/start_local.ps1`，只启动前后端。启动器使用已有 JAR，不自动构建／下载依赖。首次在新电脑搭建环境，或希望分别启动服务时，继续按下面步骤操作。
 
 准备 Node.js ≥ 20.9、JDK 17、Maven 3.9+ 和 MySQL 8。先创建 `jwzz` 数据库与仅有该库权限的账号。Redis 不必安装才能体验；若暂未启动，在本地配置中将 `JWZZ_REDIS_ENABLED` 设为 `false`。
 

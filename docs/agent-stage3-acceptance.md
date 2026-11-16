@@ -16,6 +16,8 @@ Java 到 Python 的请求只包含 `context`（居家或诊室）、`hasComparab
 
 ## 真实模型怎么开
 
+**日常启动推荐使用[本机加密配置与一键启动](local-startup.md)**：仅首次输入 Key，由脚本管理 Java—Python 共享令牌；以后一个 PowerShell 7.4+ 终端运行 `./scripts/start_local.ps1 -WithAi`。下方保留手动分终端方式用于排查，不要同时启动两套实例。
+
 需要已构建的阶段三后端、现有前端依赖、本机 MySQL，以及一个支持 Chat Completions JSON 输出的模型账号。下方以 [DeepSeek JSON Output](https://api-docs.deepseek.com/guides/json_mode/) 文档中的模型为例。换供应商时，用对方支持 `response_format: {"type":"json_object"}` 的模型 ID 和 Base URL，不要把 `/chat/completions` 写进 Base URL。
 
 先在自己电脑生成随机共享令牌，例如在项目根目录执行 `& .\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_urlsafe(36))"`。仅在本机复制该令牌给下面两个终端，不把令牌或模型密钥发到聊天、写进源码、提交到 Git。

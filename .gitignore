@@ -9,6 +9,9 @@
 **/.env
 **/.env.local
 server/.env.local.ps1
+# Local launcher logs and Windows-encrypted AI credentials (never commit either).
+.local-run/
+**/ai-credentials.clixml*
 nhanes_dkd_dataset.csv
 __pycache__/
 *.py[cod]
