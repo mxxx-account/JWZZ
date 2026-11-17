@@ -44,8 +44,20 @@ public class MessageStore {
     }
 
     public List<Message> forConversation(long consultationId) {
-        return jdbc.query("SELECT id, consultation_id, sender_id, body, created_at FROM consultation_message "
-            + "WHERE consultation_id=? ORDER BY id ASC LIMIT 500", (rs, row) -> map(rs), consultationId);
+        return page(consultationId, null, null, 50).items();
+    }
+
+    public com.jwzz.server.common.ChatPage<Message> page(long id, Long before, Long after, int size) {
+        com.jwzz.server.common.ChatPage.validate(before, after, size);
+        String bound = before != null ? " AND id<?" : after != null ? " AND id>?" : "";
+        var args = new java.util.ArrayList<Object>();
+        args.add(id);
+        if (before != null || after != null) args.add(before != null ? before : after);
+        args.add(size + 1);
+        var rows = jdbc.query("SELECT id,consultation_id,sender_id,body,created_at FROM consultation_message "
+            + "WHERE consultation_id=?" + bound + " ORDER BY id " + (after == null ? "DESC" : "ASC") + " LIMIT ?",
+            (rs,row) -> map(rs), args.toArray());
+        return com.jwzz.server.common.ChatPage.of(rows, size, after == null);
     }
 
     public Optional<Message> latest(long consultationId) {
@@ -63,12 +75,14 @@ public class MessageStore {
         return result == null ? 0 : result;
     }
 
-    public void markRead(long consultationId, boolean doctor) {
-        Long newest = jdbc.queryForObject("SELECT COALESCE(MAX(id), 0) FROM consultation_message WHERE consultation_id=?",
-            Long.class, consultationId);
+    public void markRead(long consultationId, boolean doctor, long seenId) {
+        Integer exists = jdbc.queryForObject("SELECT COUNT(*) FROM consultation_message WHERE consultation_id=? AND id=?",
+            Integer.class, consultationId, seenId);
+        if (exists == null || exists != 1) throw new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.BAD_REQUEST, "Read cursor must belong to this conversation");
         String column = doctor ? "doctor_last_read_message_id" : "user_last_read_message_id";
         jdbc.update("UPDATE consultation_request SET " + column + "=GREATEST(" + column + ", ?) WHERE id=?",
-            newest == null ? 0L : newest, consultationId);
+            seenId, consultationId);
     }
 
     private Message map(java.sql.ResultSet rs) throws java.sql.SQLException {

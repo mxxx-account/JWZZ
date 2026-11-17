@@ -14,7 +14,7 @@ public class ShopConversationStore {
     public record Summary(long id, long orderId, long peerId, String peerName, String orderStatus,
                           String lastMessage, LocalDateTime updatedAt, int unreadCount) {}
     public record Message(long id, long conversationId, long senderId, String body, LocalDateTime createdAt) {}
-    public record Detail(Summary conversation, List<Message> messages) {}
+    public record Detail(Summary conversation, List<Message> messages, boolean hasMore) {}
 
     private final JdbcTemplate jdbc;
     public ShopConversationStore(JdbcTemplate jdbc) { this.jdbc = jdbc; }
@@ -79,12 +79,30 @@ public class ShopConversationStore {
     }
 
     public List<Message> messages(long conversationId) {
-        return jdbc.query("""
-            SELECT id,conversation_id,sender_id,body,created_at FROM (
-              SELECT id,conversation_id,sender_id,body,created_at FROM shop_message
-              WHERE conversation_id=? ORDER BY id DESC LIMIT 200
-            ) recent ORDER BY id
-            """, (rs, row) -> message(rs), conversationId);
+        return messagePage(conversationId, null, null, 50).items();
+    }
+
+    public com.jwzz.server.common.ChatPage<Message> messagePage(long id, Long before, Long after, int size) {
+        com.jwzz.server.common.ChatPage.validate(before, after, size);
+        var args = new java.util.ArrayList<Object>();
+        args.add(id);
+        String bound = before != null ? " AND id<?" : after != null ? " AND id>?" : "";
+        if (before != null || after != null) args.add(before != null ? before : after);
+        args.add(size + 1);
+        var rows = jdbc.query("SELECT id,conversation_id,sender_id,body,created_at FROM shop_message WHERE conversation_id=?"
+            + bound + " ORDER BY id " + (after == null ? "DESC" : "ASC") + " LIMIT ?", (rs,row) -> message(rs), args.toArray());
+        return com.jwzz.server.common.ChatPage.of(rows, size, after == null);
+    }
+
+    public com.jwzz.server.common.ChatPage<Summary> page(long actorId, boolean merchant, Long before, int size) {
+        com.jwzz.server.common.ChatPage.validate(before, null, size);
+        var args = new java.util.ArrayList<Object>();
+        args.add(actorId); args.add(actorId);
+        if (before != null) args.add(before);
+        args.add(size + 1);
+        var rows = jdbc.query(summarySql(merchant) + (before == null ? "" : " AND c.id<?")
+            + " ORDER BY c.id DESC LIMIT ?", (rs,row) -> summary(rs), args.toArray());
+        return com.jwzz.server.common.ChatPage.of(rows, size, false);
     }
 
     private Message message(java.sql.ResultSet rs) throws java.sql.SQLException {
@@ -124,11 +142,13 @@ public class ShopConversationStore {
             rs.getTimestamp("updated_at").toLocalDateTime(), rs.getInt("unread_count"));
     }
 
-    public void markRead(long id, boolean merchant) {
-        Long latest = jdbc.queryForObject("SELECT COALESCE(MAX(id),0) FROM shop_message WHERE conversation_id=?",
-            Long.class, id);
+    public void markRead(long id, boolean merchant, long seenId) {
+        Integer exists = jdbc.queryForObject("SELECT COUNT(*) FROM shop_message WHERE conversation_id=? AND id=?",
+            Integer.class, id, seenId);
+        if (exists == null || exists != 1) throw new org.springframework.web.server.ResponseStatusException(
+            org.springframework.http.HttpStatus.BAD_REQUEST, "Read cursor must belong to this conversation");
         String column = merchant ? "merchant_last_read_message_id" : "user_last_read_message_id";
         jdbc.update("UPDATE shop_conversation SET " + column + "=GREATEST(" + column + ",?) WHERE id=?",
-            latest == null ? 0L : latest, id);
+            seenId, id);
     }
 }

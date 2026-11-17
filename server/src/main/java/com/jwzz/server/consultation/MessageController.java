@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import com.jwzz.server.common.ChatPage;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,7 +31,7 @@ public class MessageController {
     public record Summary(long id, long reportId, long peerId, String peerName, String peerSpecialty,
                           boolean peerOnline, String status, String lastMessage, LocalDateTime updatedAt,
                           int unreadCount, boolean canSend) {}
-    public record Detail(Summary conversation, List<MessageStore.Message> messages) {}
+    public record Detail(Summary conversation, List<MessageStore.Message> messages, boolean hasMore) {}
 
     private final UserStore users;
     private final DoctorDirectoryStore doctors;
@@ -53,11 +55,24 @@ public class MessageController {
     }
 
     @GetMapping("/conversations/{id}")
-    public Detail conversation(@PathVariable long id, Principal principal) {
+    public Detail conversation(@PathVariable long id, Principal principal,
+                              @RequestParam(required=false) Long beforeId,
+                              @RequestParam(required=false) Long afterId,
+                              @RequestParam(defaultValue="50") int size) {
         var user = current(principal);
         boolean doctor = user.role().equals("DOCTOR");
         var item = accessible(id, user, doctor);
-        return new Detail(summary(item, user, doctor), messages.forConversation(id));
+        var page = messages.page(id, beforeId, afterId, size);
+        return new Detail(summary(item, user, doctor), page.items(), page.hasMore());
+    }
+
+    @GetMapping("/conversations/page")
+    public ChatPage<Summary> page(Principal principal, @RequestParam(required=false) Long beforeId,
+                                 @RequestParam(defaultValue="20") int size) {
+        var user = current(principal);
+        boolean doctor = user.role().equals("DOCTOR");
+        var page = consultations.chatPage(user.id(), doctor, beforeId, size);
+        return new ChatPage<>(page.items().stream().map(item -> summary(item, user, doctor)).toList(), page.hasMore());
     }
 
     @Transactional
@@ -91,11 +106,13 @@ public class MessageController {
 
     @PostMapping("/conversations/{id}/read")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void markRead(@PathVariable long id, Principal principal) {
+    @Transactional
+    public void markRead(@PathVariable long id, Principal principal, @Valid @RequestBody ChatPage.ReadRequest request) {
         var user = current(principal);
         boolean doctor = user.role().equals("DOCTOR");
+        messages.lockConversation(id);
         accessible(id, user, doctor);
-        messages.markRead(id, doctor);
+        messages.markRead(id, doctor, request.lastReadMessageId());
     }
 
     private Summary summary(ConsultationStore.Consultation item, UserStore.User user, boolean doctor) {

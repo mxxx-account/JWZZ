@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import com.jwzz.server.common.ChatPage;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -38,8 +40,16 @@ public class UserShopMessageController {
     }
 
     @GetMapping("/conversations/{id}")
-    public ShopConversationStore.Detail detail(@PathVariable long id, Principal principal) {
-        return service.detail(userId(principal), false, id);
+    public ShopConversationStore.Detail detail(@PathVariable long id, Principal principal,
+            @RequestParam(required=false) Long beforeId, @RequestParam(required=false) Long afterId,
+            @RequestParam(defaultValue="50") int size) {
+        return service.detail(userId(principal), false, id, beforeId, afterId, size);
+    }
+
+    @GetMapping("/conversations/page")
+    public ChatPage<ShopConversationStore.Summary> page(Principal principal,
+            @RequestParam(required=false) Long beforeId, @RequestParam(defaultValue="20") int size) {
+        return service.page(userId(principal), false, beforeId, size);
     }
 
     @PostMapping("/conversations/{id}/messages")
@@ -51,7 +61,9 @@ public class UserShopMessageController {
 
     @PostMapping("/conversations/{id}/read")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void read(@PathVariable long id, Principal principal) { service.markRead(userId(principal), false, id); }
+    public void read(@PathVariable long id, Principal principal, @Valid @RequestBody ChatPage.ReadRequest request) {
+        service.markRead(userId(principal), false, id, request.lastReadMessageId());
+    }
 
     private long userId(Principal principal) { return users.findByEmail(principal.getName()).orElseThrow().id(); }
 }

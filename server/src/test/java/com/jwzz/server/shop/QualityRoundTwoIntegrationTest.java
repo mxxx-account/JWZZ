@@ -164,13 +164,22 @@ class QualityRoundTwoIntegrationTest {
                 chats.addMessage(chat,buyer,"persistent-message-"+i);
                 if (i>=199) {
                     var messages=chats.messages(chat);
-                    assertEquals(Math.min(i,200),messages.size());
-                    assertEquals("persistent-message-"+(i==201?2:1),messages.get(0).body());
+                    assertEquals(50,messages.size());
+                    assertEquals("persistent-message-"+(i-49),messages.get(0).body());
                     assertEquals("persistent-message-"+i,messages.get(messages.size()-1).body());
                 }
             }
             assertEquals(201,f.db.queryForObject("SELECT COUNT(*) FROM shop_message WHERE conversation_id=?",Integer.class,chat));
-            System.out.println("ROUND2 persisted messages=201; detail capped=200; oldest persisted row retained");
+            var history = new java.util.HashSet<Long>();
+            Long before = null;
+            do {
+                var page = chats.messagePage(chat,before,null,50);
+                for(var item:page.items()) assertTrue(history.add(item.id()));
+                if(!page.hasMore()) break;
+                before=page.items().get(0).id();
+            } while(true);
+            assertEquals(201,history.size());
+            System.out.println("ROUND2 persisted messages=201; latest page=50; all history reachable via cursors");
         }
     }
 }

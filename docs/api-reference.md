@@ -35,9 +35,10 @@
 | POST `/doctor/consultations/{id}/claim` | 目标医生 | 无 | `200` 接受咨询；竞争失败 409，成功后医生消息页可见会话 |
 | POST `/doctor/consultations/{id}/reply` | 已接单医生 | `{answer}`，10–2000 字 | `200` 更新旧版答复并写消息；旧接口保留兼容 |
 | GET `/messages/conversations` | 用户/医生 | 无 | `200` 会话摘要；医生只看已接受的会话，用户提交后即可看自己的会话 |
-| GET `/messages/conversations/{id}` | 会话用户/已接受医生 | 无 | `200 {conversation,messages}`，目前最多 500 条；医生未接受时 404 |
-| POST `/messages/conversations/{id}` | 会话用户/已接单医生 | `{body}`，1–2000 字 | `201` 新消息；撤销授权后禁止发送；用户/医生分别每分钟最多 30/60 条 |
-| POST `/messages/conversations/{id}/read` | 会话用户/目标医生 | 无 | `204` 更新已读游标 |
+| GET `/messages/conversations/page` | 用户/医生 | `size` 默认 20，可选 `beforeId` | `200 {items,hasMore}`；按会话 ID 倒序；医生只看已接受且仍获授权的会话 |
+| GET `/messages/conversations/{id}` | 会话用户/已接受医生 | `size` 默认 50，可选 `beforeId` 或 `afterId` | `200 {conversation,messages,hasMore}`；消息升序，未传游标取最新页；医生未接受时 404 |
+| POST `/messages/conversations/{id}` | 会话用户/已接单医生 | `{body,clientMessageId?}`，正文 1–2000 字 | `201` 新消息；重试使用相同客户端 ID；撤销授权后禁止发送；用户/医生分别每分钟最多 30/60 条 |
+| POST `/messages/conversations/{id}/read` | 会话用户/已接受医生 | `{lastReadMessageId}`，必填且为本会话的消息 ID | `204` 单调推进已读游标；缺失、非正数、其他会话的 ID 返回 400 |
 
 指标录入示例：
 
@@ -63,10 +64,20 @@
 | POST `/shop/orders/{id}/pay`；POST `/shop/orders/{id}/cancel` | 用户 | 无 | 模拟支付或取消；仅待支付能取消 |
 | GET `/merchant/orders`；GET `/merchant/orders/{id}` | 商家 | 无 | 本店订单列表/明细；他店 404 |
 | POST `/merchant/orders/{id}/accept` | 商家 | 无 | 已模拟支付订单接单、预留转已售 |
-| POST `/shop/orders/{id}/conversation` | 订单用户 | `{body?}`，空值填默认订单问候 | 201 `{conversation,messages}`；重复调用返回同一会话 |
-| GET `/shop/conversations`；GET `/shop/conversations/{id}` | 用户 | 无 | 本人订单会话列表/最近 200 条消息 |
-| POST `/shop/conversations/{id}/messages`；POST `/shop/conversations/{id}/read` | 用户 | 发消息 `{body}`，1–2000 字；或无请求体标记已读 | 201 消息；204 已读 |
-| GET `/merchant/conversations`；GET `/merchant/conversations/{id}` | 商家 | 无 | 本店订单会话列表/详情 |
+| POST `/shop/orders/{id}/conversation` | 订单用户 | `{body?}`，空值填默认订单问候 | 201 `{conversation,messages,hasMore}`；重复调用返回同一会话，消息取最新 50 条 |
+| GET `/shop/conversations`；GET `/merchant/conversations` | 对应用户/商家 | 无 | 旧兼容列表，最近 100 个会话；新聊天页不用此接口 |
+| GET `/shop/conversations/page`；GET `/merchant/conversations/page` | 对应用户/商家 | `size` 默认 20，可选 `beforeId` | `{items,hasMore}`，按会话 ID 倒序 |
+| GET `/shop/conversations/{id}`；GET `/merchant/conversations/{id}` | 对应用户/商家 | `size` 默认 50，可选 `beforeId` 或 `afterId` | `{conversation,messages,hasMore}`，与咨询消息分页语义一致 |
+| POST `/shop/conversations/{id}/messages`；POST `/shop/conversations/{id}/read` | 用户 | 发消息 `{body,clientMessageId?}`，1–2000 字；已读 `{lastReadMessageId}` | 201 消息；204 已读 |
 | POST `/merchant/conversations/{id}/messages`；POST `/merchant/conversations/{id}/read` | 商家 | 同上 | 201 消息；204 已读 |
 
 订单关联商家消息的权限按当前账号与 `shop_conversation.user_id` 或店铺 `merchant_id` 判定；不允许传入自称的用户/商家 ID。不存在或非本人资源统一 404。商家账号访问医生 `/messages/**`、医生账号访问 `/shop/**` 和 `/merchant/**` 均为 403。消息不是正式诊疗或药学咨询通道。
+
+## 消息游标契约（2026-11-17）
+
+- 所有新分页接口 `size` 为 1–100；会话列表 `beforeId`、消息历史 `beforeId` 必须大于 0，消息增量 `afterId` 可为 0，不得同时传 before/after。无效参数返回 400。
+- 消息首次不传游标：取最新一页，但响应按 ID 升序；加载更早消息传当前最小消息 ID 为 `beforeId`；新消息传当前最大已收到 ID 为 `afterId`。游标均为排他边界，不要求 ID 连续。
+- `hasMore` 是本次查询方向是否还有结果。初始／历史表示还有更早消息；增量表示还有更新消息。空消息列表 `hasMore=false`，不表示会话不存在。
+- 已读是“读到某个消息位置”的高水位，不是逐条阅读证明。客户端仅上报可见消息行的最大 ID；服务端验证归属、鉴权并取 `GREATEST(旧游标,上报值)`。读取后新到达但尚未显示的消息不应一起清零；迟到的旧游标不回退。
+- 旧无参数数组列表仍保留；详情改为最新 50 条、已读改为必填请求体，因此须配套更新前后端，不支持旧客户端继续无请求体清未读。
+- 医疗与商家消息独立鉴权；分页不扩大访问范围。测试与运行方式见[消息分页验收](message-pagination-acceptance.md)。

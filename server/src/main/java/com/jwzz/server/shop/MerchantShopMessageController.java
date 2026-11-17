@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import com.jwzz.server.common.ChatPage;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,8 +34,16 @@ public class MerchantShopMessageController {
     }
 
     @GetMapping("/{id}")
-    public ShopConversationStore.Detail detail(@PathVariable long id, Principal principal) {
-        return service.detail(merchantId(principal), true, id);
+    public ShopConversationStore.Detail detail(@PathVariable long id, Principal principal,
+            @RequestParam(required=false) Long beforeId, @RequestParam(required=false) Long afterId,
+            @RequestParam(defaultValue="50") int size) {
+        return service.detail(merchantId(principal), true, id, beforeId, afterId, size);
+    }
+
+    @GetMapping("/page")
+    public ChatPage<ShopConversationStore.Summary> page(Principal principal,
+            @RequestParam(required=false) Long beforeId, @RequestParam(defaultValue="20") int size) {
+        return service.page(merchantId(principal), true, beforeId, size);
     }
 
     @PostMapping("/{id}/messages")
@@ -45,8 +55,8 @@ public class MerchantShopMessageController {
 
     @PostMapping("/{id}/read")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void read(@PathVariable long id, Principal principal) {
-        service.markRead(merchantId(principal), true, id);
+    public void read(@PathVariable long id, Principal principal, @Valid @RequestBody ChatPage.ReadRequest request) {
+        service.markRead(merchantId(principal), true, id, request.lastReadMessageId());
     }
 
     private long merchantId(Principal principal) { return users.findByEmail(principal.getName()).orElseThrow().id(); }

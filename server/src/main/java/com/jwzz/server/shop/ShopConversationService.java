@@ -35,8 +35,17 @@ public class ShopConversationService {
     }
 
     public ShopConversationStore.Detail detail(long actorId, boolean merchant, long id) {
+        return detail(actorId, merchant, id, null, null, 50);
+    }
+
+    public com.jwzz.server.common.ChatPage<ShopConversationStore.Summary> page(long actorId, boolean merchant, Long before, int size) {
+        return conversations.page(actorId, merchant, before, size);
+    }
+
+    public ShopConversationStore.Detail detail(long actorId, boolean merchant, long id, Long before, Long after, int size) {
         var summary = conversations.summary(actorId, merchant, id).orElseThrow(() -> notFound());
-        return new ShopConversationStore.Detail(summary, conversations.messages(id));
+        var page = conversations.messagePage(id, before, after, size);
+        return new ShopConversationStore.Detail(summary, page.items(), page.hasMore());
     }
 
     @Transactional
@@ -58,9 +67,9 @@ public class ShopConversationService {
     }
 
     @Transactional
-    public void markRead(long actorId, boolean merchant, long id) {
+    public void markRead(long actorId, boolean merchant, long id, long seenId) {
         accessibleLocked(actorId, merchant, id);
-        conversations.markRead(id, merchant);
+        conversations.markRead(id, merchant, seenId);
     }
 
     private ShopConversationStore.Conversation accessibleLocked(long actorId, boolean merchant, long id) {

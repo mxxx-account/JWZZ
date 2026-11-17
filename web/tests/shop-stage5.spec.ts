@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { expectChatPanelsScrollable } from "./chat-layout";
 
 const password = "ShopStage5Pass123!";
+const apiBase = process.env.TEST_API_URL ?? "http://localhost:8080";
 
 async function register(page: Page, role: "MERCHANT" | "USER" | "DOCTOR", email: string, name: string) {
   await page.goto("/");
@@ -85,27 +86,27 @@ test("不同用户与商家订单消息隔离，医生咨询不出现在商家�
   await register(page, "USER", userB, "消息用户乙");
   const conversationB = await startOrderChat(page, storeB);
   expect(conversationB).not.toBe(conversationA);
-  expect((await page.request.get(`http://localhost:8080/api/shop/conversations/${conversationA}`)).status()).toBe(404);
+  expect((await page.request.get(`${apiBase}/api/shop/conversations/${conversationA}`)).status()).toBe(404);
   await page.getByRole("button", { name: "退出登录" }).click();
 
   await login(page, "MERCHANT", merchantB);
   await page.getByRole("link", { name: "消息" }).click();
   await expect(page.locator(".chat-conversation-list")).toContainText("消息用户乙");
   await expect(page.locator(".chat-conversation-list")).not.toContainText("消息用户甲");
-  expect((await page.request.get(`http://localhost:8080/api/merchant/conversations/${conversationA}`)).status()).toBe(404);
-  expect((await page.request.get("http://localhost:8080/api/messages/conversations")).status()).toBe(403);
-  expect((await page.request.get("http://localhost:8080/api/doctor/reports")).status()).toBe(403);
+  expect((await page.request.get(`${apiBase}/api/merchant/conversations/${conversationA}`)).status()).toBe(404);
+  expect((await page.request.get(`${apiBase}/api/messages/conversations`)).status()).toBe(403);
+  expect((await page.request.get(`${apiBase}/api/doctor/reports`)).status()).toBe(403);
   await expect(page.locator(".chat-main")).not.toContainText("报告 #");
   await page.getByRole("button", { name: "退出登录" }).click();
 
   await login(page, "MERCHANT", merchantA);
-  const beforeRead = await (await page.request.get("http://localhost:8080/api/merchant/conversations")).json();
+  const beforeRead = await (await page.request.get(`${apiBase}/api/merchant/conversations`)).json();
   expect(beforeRead.find((item: { id: number }) => item.id === conversationA).unreadCount).toBe(2);
   await page.getByRole("link", { name: "消息" }).click();
   await expect(page.locator(".chat-conversation-list")).toContainText("消息用户甲");
   await expect(page.locator(".chat-conversation-list")).not.toContainText("消息用户乙");
   await expect.poll(async () => {
-    const list = await (await page.request.get("http://localhost:8080/api/merchant/conversations")).json();
+    const list = await (await page.request.get(`${apiBase}/api/merchant/conversations`)).json();
     return list.find((item: { id: number }) => item.id === conversationA).unreadCount;
   }).toBe(0);
   await page.getByLabel("输入商家消息").fill("商家甲已经看到订单问题");
@@ -118,21 +119,21 @@ test("不同用户与商家订单消息隔离，医生咨询不出现在商家�
   await page.getByRole("button", { name: "退出登录" }).click();
 
   await login(page, "USER", userA);
-  const userUnread = await (await page.request.get("http://localhost:8080/api/shop/conversations")).json();
+  const userUnread = await (await page.request.get(`${apiBase}/api/shop/conversations`)).json();
   expect(userUnread.find((item: { id: number }) => item.id === conversationA).unreadCount).toBe(1);
   await page.getByRole("link", { name: "商家消息" }).click();
   await expect(page.locator(".chat-thread")).toContainText("商家甲已经看到订单问题");
   await expect.poll(async () => {
-    const list = await (await page.request.get("http://localhost:8080/api/shop/conversations")).json();
+    const list = await (await page.request.get(`${apiBase}/api/shop/conversations`)).json();
     return list.find((item: { id: number }) => item.id === conversationA).unreadCount;
   }).toBe(0);
-  expect((await page.request.get(`http://localhost:8080/api/shop/conversations/${conversationB}`)).status()).toBe(404);
+  expect((await page.request.get(`${apiBase}/api/shop/conversations/${conversationB}`)).status()).toBe(404);
   await page.getByRole("button", { name: "退出登录" }).click();
 
   await register(page, "DOCTOR", `shop-chat-doctor-${suffix}@example.invalid`, "消息测试医生");
   await expect(page).toHaveURL(/\/doctor$/);
-  expect((await page.request.get("http://localhost:8080/api/merchant/conversations")).status()).toBe(403);
-  expect((await page.request.get("http://localhost:8080/api/shop/conversations")).status()).toBe(403);
+  expect((await page.request.get(`${apiBase}/api/merchant/conversations`)).status()).toBe(403);
+  expect((await page.request.get(`${apiBase}/api/shop/conversations`)).status()).toBe(403);
 
   await page.getByRole("button", { name: "退出登录" }).click();
   for (const email of [merchantA, merchantB]) {

@@ -79,10 +79,11 @@ class ShopConversationIntegrationTest {
                 assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class,
                     () -> tx.execute(status -> service.send(secondBuyer, false, id, "越权"))).getStatusCode());
                 assertEquals(HttpStatus.NOT_FOUND, assertThrows(ResponseStatusException.class,
-                    () -> tx.executeWithoutResult(status -> service.markRead(secondSeller, true, id))).getStatusCode());
+                    () -> tx.executeWithoutResult(status -> service.markRead(secondSeller, true, id, 1))).getStatusCode());
 
                 assertEquals(1, service.list(merchant1, true).get(0).unreadCount());
-                tx.executeWithoutResult(status -> service.markRead(seller, true, id));
+                long seen = service.detail(seller, true, id).messages().get(0).id();
+                tx.executeWithoutResult(status -> service.markRead(seller, true, id, seen));
                 assertEquals(0, service.list(merchant1, true).get(0).unreadCount());
                 tx.execute(status -> service.send(seller, true, id, "您的订单可以咨询"));
                 assertEquals(1, service.list(user1, false).get(0).unreadCount());

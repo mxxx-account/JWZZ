@@ -56,6 +56,21 @@ public class ConsultationStore {
         return jdbc.query("SELECT * FROM consultation_request WHERE user_id=? ORDER BY id DESC LIMIT 100", ROW, userId);
     }
 
+    // Immutable creation IDs keep page boundaries stable when new messages arrive.
+    public com.jwzz.server.common.ChatPage<Consultation> chatPage(long actor, boolean doctor, Long before, int size) {
+        com.jwzz.server.common.ChatPage.validate(before, null, size);
+        String sql = "SELECT c.* FROM consultation_request c";
+        var args = new java.util.ArrayList<Object>();
+        if (doctor) {
+            sql += " JOIN report_access_grant g ON g.report_id=c.report_id AND g.doctor_id=? AND g.revoked_at IS NULL"
+                + " WHERE c.claimed_doctor_id=? AND (c.target_doctor_id=? OR c.target_doctor_id IS NULL)";
+            args.add(actor); args.add(actor); args.add(actor);
+        } else { sql += " WHERE c.user_id=?"; args.add(actor); }
+        if (before != null) { sql += " AND c.id<?"; args.add(before); }
+        args.add(size + 1);
+        return com.jwzz.server.common.ChatPage.of(jdbc.query(sql + " ORDER BY c.id DESC LIMIT ?", ROW, args.toArray()), size, false);
+    }
+
     public List<Consultation> forDoctor(long doctorId) {
         return jdbc.query("SELECT DISTINCT c.* FROM consultation_request c "
             + "JOIN report_access_grant g ON g.report_id=c.report_id AND g.doctor_id=? AND g.revoked_at IS NULL "

@@ -201,6 +201,8 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .chat-compose textarea { min-height: 78px; max-height: 180px; border: 0; resize: vertical; outline-color: #8ad2cd; }
 .chat-compose-foot { display: flex; justify-content: space-between; align-items: center; color: #90a1a6; }
 .chat-compose-foot button { padding: 8px 28px; }
+.chat-load-more { display: block; margin: 8px auto; padding: 6px 14px; background: #edf7f7; color: #126b70; font-size: 13px; }
+.chat-jump-latest { display: block; margin-left: auto; padding: 2px 8px; background: transparent; color: #126b70; font-size: 12px; }
 .chat-claim { padding: 8px 14px; margin-bottom: 8px; }
 .chat-placeholder { margin: auto; text-align: center; padding: 24px; color: #69818a; }
 .chat-placeholder span { font-size: 56px; color: #9acdcc; }

@@ -1,5 +1,6 @@
 param([string]$BaseUrl = 'http://127.0.0.1:8080', [string]$DoctorPassword = '')
 $ErrorActionPreference = 'Stop'
+Import-Module Microsoft.PowerShell.Utility
 if (-not $DoctorPassword) {
     $localConfig = Join-Path $PSScriptRoot '..\server\.env.local.ps1'
     if (Test-Path $localConfig) { . $localConfig }
@@ -70,7 +71,35 @@ Check (PostJson "/api/messages/conversations/$id" $user @{body='好的，我会�
 $history = Invoke-RestMethod "$base/api/messages/conversations/$id" -WebSession $cardiology
 if ($history.messages.Count -ne 3) { throw 'Conversation history mismatch' }
 Write-Output 'PASS three-message history'
-Check (PostJson "/api/messages/conversations/$id/read" $cardiology @{}) 204 'mark read'
+$basePath = "/api/messages/conversations/$id"
+$latest = Invoke-RestMethod "$base${basePath}?size=2" -WebSession $cardiology
+if (-not $latest.hasMore -or $latest.messages.Count -ne 2 -or $latest.messages[0].id -ne $history.messages[1].id) { throw 'Latest message page mismatch' }
+$older = Invoke-RestMethod "$base${basePath}?size=2&beforeId=$($latest.messages[0].id)" -WebSession $cardiology
+if ($older.hasMore -or $older.messages.Count -ne 1 -or $older.messages[0].id -ne $history.messages[0].id) { throw 'Older page mismatch' }
+$incremental = Invoke-RestMethod "$base${basePath}?size=2&afterId=$($older.messages[0].id)" -WebSession $cardiology
+if ($incremental.hasMore -or $incremental.messages.Count -ne 2 -or $incremental.messages[-1].id -ne $history.messages[-1].id) { throw 'Incremental page mismatch' }
+$empty = Invoke-RestMethod "$base${basePath}?afterId=$($history.messages[-1].id)" -WebSession $cardiology
+if ($empty.messages.Count -ne 0 -or $empty.hasMore) { throw 'Up-to-date cursor must return no messages' }
+$pagedList = Invoke-RestMethod "$base/api/messages/conversations/page?size=20" -WebSession $cardiology
+if (-not ($pagedList.items | Where-Object id -eq $id)) { throw 'Conversation page route mismatch' }
+Write-Output 'PASS latest, older, incremental, empty and conversation-page HTTP contracts'
+Check (Invoke-WebRequest "$base${basePath}?beforeId=1&afterId=1" -WebSession $cardiology -SkipHttpErrorCheck) 400 'reject two cursors'
+Check (Invoke-WebRequest "$base${basePath}?size=101" -WebSession $cardiology -SkipHttpErrorCheck) 400 'reject oversized page'
+Check (PostJson "$basePath/read" $cardiology @{}) 400 'reject missing read cursor'
+Check (PostJson $basePath $user @{body='在读取历史之后到达的新消息。'}) 201 'message arrives after fetched page'
+Check (PostJson "/api/messages/conversations/$id/read" $cardiology @{lastReadMessageId=$history.messages[-1].id}) 204 'mark read'
+$bounded = Invoke-RestMethod "$base/api/messages/conversations/page" -WebSession $cardiology
+if (($bounded.items | Where-Object id -eq $id).unreadCount -ne 1) { throw 'Read acknowledgement consumed unseen new message' }
+Check (PostJson "$basePath/read" $cardiology @{lastReadMessageId=$history.messages[0].id}) 204 'delayed lower read cursor'
+$bounded = Invoke-RestMethod "$base/api/messages/conversations/page" -WebSession $cardiology
+if (($bounded.items | Where-Object id -eq $id).unreadCount -ne 1) { throw 'Read cursor regressed' }
+$other = PostJson '/api/consultations' $user @{reportId=$reportId;doctorId=$doctorId;question='另一咨询'}
+Check $other 201 'create independent consultation'
+$otherId = ($other.Content | ConvertFrom-Json).id
+$otherHistory = Invoke-RestMethod "$base/api/messages/conversations/$otherId" -WebSession $user
+Check (PostJson "$basePath/read" $cardiology @{lastReadMessageId=$otherHistory.messages[0].id}) 400 'reject read cursor from another conversation'
+$caughtUp = Invoke-RestMethod "$base${basePath}?afterId=$($history.messages[-1].id)" -WebSession $cardiology
+Check (PostJson "$basePath/read" $cardiology @{lastReadMessageId=$caughtUp.messages[-1].id}) 204 'read fetched new message'
 $readList = Invoke-RestMethod "$base/api/messages/conversations" -WebSession $cardiology
 if (($readList | Where-Object id -eq $id).unreadCount -ne 0) { throw 'Unread count did not clear' }
 Write-Output 'PASS unread count cleared'

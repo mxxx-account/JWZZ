@@ -1,6 +1,7 @@
 .venv/
 **/node_modules/
 **/.next/
+**/.next-pagination/
 *.tsbuildinfo
 **/test-results/
 **/playwright-report/
