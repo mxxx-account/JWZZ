@@ -30,9 +30,13 @@ public class NotificationStore {
             JOIN app_user a ON a.id=n.recipient_id AND a.role='DOCTOR'
             WHERE c.id=n.resource_id AND c.target_doctor_id=n.recipient_id
               AND g.doctor_id=n.recipient_id AND g.revoked_at IS NULL))
-          OR (n.event_type='DOCTOR_REPLIED' AND EXISTS (
+          OR (n.event_type IN ('DOCTOR_REPLIED','CONSULTATION_CLOSED') AND EXISTS (
             SELECT 1 FROM consultation_request c JOIN app_user a ON a.id=n.recipient_id AND a.role='USER'
             WHERE c.id=n.resource_id AND c.user_id=n.recipient_id))
+          OR (n.event_type='RECORD_REMINDER_DUE' AND EXISTS (
+            SELECT 1 FROM followup_task t JOIN consultation_request c ON c.id=t.consultation_id
+            JOIN app_user a ON a.id=n.recipient_id AND a.role='USER'
+            WHERE t.id=n.resource_id AND c.user_id=n.recipient_id AND t.status='NOTIFIED'))
           OR (n.event_type IN ('ORDER_ACCEPTED','ORDER_EXPIRED') AND EXISTS (
             SELECT 1 FROM shop_order o JOIN app_user a ON a.id=n.recipient_id AND a.role='USER'
             WHERE o.id=n.resource_id AND o.user_id=n.recipient_id)))
@@ -53,17 +57,23 @@ public class NotificationStore {
                     case DOCTOR_REPLIED -> "医生回复了咨询";
                     case ORDER_ACCEPTED -> "商家已接受订单";
                     case ORDER_EXPIRED -> "待支付订单已超时关闭";
+                    case CONSULTATION_CLOSED -> "本次咨询已结束";
+                    case RECORD_REMINDER_DUE -> "你确认的记录提醒已到期";
                 };
                 String description=switch(type) {
                     case CONSULTATION_SUBMITTED -> "请到首页查看待咨询列表，接受后开始沟通。";
                     case DOCTOR_REPLIED -> "你的咨询有新回复，可进入咨询消息查看。";
                     case ORDER_ACCEPTED -> "商家已接受这笔演示订单，不涉及真实配送。";
                     case ORDER_EXPIRED -> "订单未在规定时间内模拟支付，预留库存已释放。";
+                    case CONSULTATION_CLOSED -> "可查看沟通小结和待办；医生建议的提醒须由你确认后生效。";
+                    case RECORD_REMINDER_DUE -> "这是你设置或确认的记录提醒，不是系统制定的医疗安排。";
                 };
                 String href=switch(type) {
                     case CONSULTATION_SUBMITTED -> "/doctor";
                     case DOCTOR_REPLIED -> "/patient/messages?conversation="+resource;
                     case ORDER_ACCEPTED, ORDER_EXPIRED -> "/patient/pharmacy?order="+resource;
+                    case CONSULTATION_CLOSED -> "/patient/followups?consultation="+resource;
+                    case RECORD_REMINDER_DUE -> "/patient/followups?consultation="+jdbc.queryForObject("SELECT consultation_id FROM followup_task WHERE id=?",Long.class,resource);
                 };
                 var read=rs.getTimestamp("read_at");
                 return new Item(rs.getLong("id"),type.name(),resource,title,description,href,

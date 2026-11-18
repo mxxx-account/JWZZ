@@ -420,6 +420,21 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .merchant-order-detail h3 { margin: 0 0 10px; }
 .shop-chat-switch { margin: 0 16px 10px; font-size: 13px; }
 .shop-chat-switch a { color: #0d716e; font-weight: 700; text-decoration: none; }
+.followup-center { max-width: 1280px; margin: 30px auto; padding: 0 24px; }
+.followup-center h1 { font-size: 32px; margin: 8px 0; }
+.followup-layout { display: grid; grid-template-columns: 280px minmax(0,1fr); gap: 24px; margin-top: 28px; }
+.followup-list, .followup-detail { min-width: 0; background: white; border: 1px solid #dce7ed; border-radius: 16px; padding: 22px; }
+.followup-list { max-height: 70vh; overflow-y: auto; align-self: start; display: grid; gap: 12px; }
+.followup-list button { text-align: left; overflow-wrap: anywhere; }
+.followup-list small { display: block; margin-top: 8px; }
+.followup-task { padding: 18px; margin: 14px 0; border: 1px solid #dce7ed; border-radius: 12px; overflow-wrap: anywhere; }
+.followup-status { display: inline-block; margin-left: 14px; color: #126a69; font-size: 13px; }
+.followup-form, .followup-task form { display: grid; gap: 14px; margin: 20px 0; }
+.followup-center label { display: grid; gap: 8px; }
+.followup-center input, .followup-center textarea { width: 100%; min-width: 0; box-sizing: border-box; }
+.followup-summary { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; background: #eff8f7; padding: 18px; border-radius: 12px; }
+.followup-chat-link { display: inline-block; margin-right: 16px; font-size: 13px; color: #126a69; }
+@media(max-width:760px) { .followup-layout {grid-template-columns:1fr;} .followup-list {max-height:240px;} .followup-center {padding:0 12px;} }
 @media (max-width: 800px) { .shop-toolbar, .shop-filters, .shop-cart-item { flex-direction: column; align-items: stretch; } .shop-toolbar p { align-self: start; } .shop-offer { gap: 10px; } }
 @media (max-width: 800px) { .shop-order-layout { grid-template-columns: 1fr; } .shop-order-list { max-height: 230px; } }
 @media (max-width: 520px) { .shop-store-heading, .shop-offer, .merchant-order-list article { flex-direction: column; } .shop-toolbar > div { flex-wrap: wrap; } .shop-offer-action { display: flex; justify-content: space-between; align-items: center; } .shop-offer-action strong { margin-right: auto; } .shop-cart-total { text-align: left; } }

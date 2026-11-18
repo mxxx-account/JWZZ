@@ -19,9 +19,12 @@ flowchart LR
   PY -->|校验后的选项；Java 再校验| T
   A --> G[报告授权与定向咨询]
   A --> M[异步消息与在线心跳]
+  A --> F[咨询结束与随访待办]
+  F --> SQL
+  F -->|用户确认的到期任务 / 事务扫描| O
   A --> C[演示商城、库存与订单]
   A --> SM[订单关联商家消息]
-  I & R & G & M & C & SM --> SQL[(MySQL 8 / Flyway V1-V13)]
+  I & R & G & M & C & SM --> SQL[(MySQL 8 / Flyway V1-V14)]
   G & M & C -->|与业务同事务| O[(notification_outbox)]
   O -->|定时扫描 / 行锁跳过已锁记录| W[通知投递 worker]
   W -->|通知写入和事件完成同事务 / 唯一事件 ID 去重| NI[(user_notification)]
@@ -45,6 +48,7 @@ flowchart LR
 | 模型网关 | `ai_service/` | 本机可选进程，负责提供商调用和结构校验；只有它收到模型 API Key |
 | 持久化 | `server/src/main/resources/db/migration` | Flyway 版本化建表；MySQL 是权限和业务状态的事实源 |
 | Redis | `RequestRateLimiter`、`IndicatorCatalogController` | 限流与不含个人信息的指标目录缓存；不可用时限流退化为单实例内存计数 |
+| 随访记录 | `consultation/Followup*`、`web/src/app/followups` | 不可变小结、待用户确认的提醒、到期事件、独立报告授权 |
 | 站内通知 | `notification/`、`web/src/app/notifications` | 事务 Outbox、后台投递、重试记录、分页通知和独立已读；不发送邮件／短信 |
 | 验收 | `scripts/verify_*.ps1`、`web/tests` | 真实 HTTP 权限/并发回归和浏览器关键流程 |
 

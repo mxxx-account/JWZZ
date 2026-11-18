@@ -86,7 +86,7 @@ public class MessageController {
         String body = request.body().trim();
         if (body.isEmpty()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message is empty");
         var user = current(principal);
-        messages.lockConversation(id);
+        var locked = consultations.findLocked(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         boolean doctor = user.role().equals("DOCTOR");
         var item = accessible(id, user, doctor);
         if (!doctor && !patientCanSend(item)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Doctor access was revoked");
@@ -95,6 +95,7 @@ public class MessageController {
             if (!existing.get().body().equals(body)) throw new ResponseStatusException(HttpStatus.CONFLICT, "消息 ID 已用于不同内容");
             return existing.get();
         }
+        if (locked.status().equals("CLOSED")) throw new ResponseStatusException(HttpStatus.CONFLICT, "咨询已结束，聊天记录保留但不能继续发送");
         if (doctor) {
             if (item.claimedDoctorId() == null || item.claimedDoctorId() != user.id())
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Claim this consultation first");
@@ -128,7 +129,7 @@ public class MessageController {
                 item.status(), latest.map(MessageStore.Message::body).orElse(item.question()),
                 latest.map(MessageStore.Message::createdAt).orElse(item.createdAt()),
                 messages.unread(item.id(), user.id(), true),
-                item.claimedDoctorId() != null && item.claimedDoctorId() == user.id());
+                !item.status().equals("CLOSED") && item.claimedDoctorId() != null && item.claimedDoctorId() == user.id());
         }
         Long peerId = item.targetDoctorId() != null ? item.targetDoctorId() : item.claimedDoctorId();
         var peer = peerId == null ? null : doctors.find(peerId).orElse(null);
@@ -141,6 +142,7 @@ public class MessageController {
     }
 
     private boolean patientCanSend(ConsultationStore.Consultation item) {
+        if (item.status().equals("CLOSED")) return false;
         return item.targetDoctorId() == null ? !reports.activeDoctorIds(item.reportId()).isEmpty()
             : reports.activeGrant(item.reportId(), item.targetDoctorId());
     }

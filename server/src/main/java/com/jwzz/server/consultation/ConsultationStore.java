@@ -44,6 +44,10 @@ public class ConsultationStore {
         return jdbc.query("SELECT * FROM consultation_request WHERE id=?", ROW, id).stream().findFirst();
     }
 
+    public Optional<Consultation> findLocked(long id) {
+        return jdbc.query("SELECT * FROM consultation_request WHERE id=? FOR UPDATE", ROW, id).stream().findFirst();
+    }
+
     public Optional<Consultation> findForDoctor(long id, long doctorId) {
         return jdbc.query("SELECT c.* FROM consultation_request c JOIN report_access_grant g "
             + "ON g.report_id=c.report_id AND g.doctor_id=? AND g.revoked_at IS NULL "
@@ -97,7 +101,8 @@ public class ConsultationStore {
     }
 
     public void updateLatestDoctorAnswer(long id, long doctorId, String answer) {
-        jdbc.update("UPDATE consultation_request SET status='ANSWERED', answer=?, answered_at=CURRENT_TIMESTAMP "
-            + "WHERE id=? AND claimed_doctor_id=?", answer, id, doctorId);
+        int updated=jdbc.update("UPDATE consultation_request SET status='ANSWERED', answer=?, answered_at=CURRENT_TIMESTAMP "
+            + "WHERE id=? AND claimed_doctor_id=? AND status IN ('CLAIMED','ANSWERED')", answer, id, doctorId);
+        if(updated!=1) throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,"咨询已结束或尚未接受");
     }
 }

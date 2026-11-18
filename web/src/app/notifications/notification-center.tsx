@@ -72,12 +72,12 @@ export function NotificationCenter({ role }: { role: Role }) {
       {error && <p className="error-notice" role="alert">{error}</p>}
       {!busy && items.length===0 && <p className="notification-empty">{unreadOnly ? "暂无未读通知。":"暂无通知。后续咨询和订单动态会显示在这里。"}</p>}
       <div className="notification-list">{items.map(item=><article key={item.id} data-notification-id={item.id} className={item.readAt?"notification-item":"notification-item unread"}>
-        <div><span className="notification-kind">{item.type.startsWith("ORDER_")?"订单动态":"咨询动态"} · {item.readAt?"已读":"未读"}</span>
-          <h2>{item.title}</h2><p>{item.description}</p><small>关联{item.type.startsWith("ORDER_")?"订单":"咨询"} #{item.resourceId} · {new Date(item.createdAt).toLocaleString("zh-CN")}</small></div>
+        <div><span className="notification-kind">{item.type==="RECORD_REMINDER_DUE"?"记录提醒":item.type.startsWith("ORDER_")?"订单动态":"咨询动态"} · {item.readAt?"已读":"未读"}</span>
+          <h2>{item.title}</h2><p>{item.description}</p><small>关联{item.type==="RECORD_REMINDER_DUE"?"待办":item.type.startsWith("ORDER_")?"订单":"咨询"} #{item.resourceId} · {new Date(item.createdAt).toLocaleString("zh-CN")}</small></div>
         <div className="notification-actions"><button onClick={()=>void acknowledge(item,true)}>查看详情</button>{!item.readAt && <button className="secondary" onClick={()=>void acknowledge(item)}>标为已读</button>}</div>
       </article>)}</div>
       {hasMore && <button className="notification-more" disabled={busy} onClick={()=>void load(true)}>加载更多通知</button>}
       {busy && <p role="status">正在同步通知…</p>}
-      <p className="note">站内通知通常在数秒后更新，不是急症响应或即时送达承诺。记录提醒将在后续随访阶段开放。</p>
+      <p className="note">站内通知通常在数秒后更新，不是急症响应或即时送达承诺。记录提醒由用户设置或确认，可在随访记录中取消。</p>
     </section></main>;
 }

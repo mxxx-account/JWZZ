@@ -1,5 +1,11 @@
 # HTTP 接口文档（当前实现）
 
+## 咨询结束与随访（V14）
+
+见[完整契约与状态说明](followups-acceptance.md#数据库与-api)。`GET /api/followups` 支持 beforeId/size 游标；`GET /api/followups/{id}` 查询小结待办；医生 `POST /api/followups/{id}/close` 结束；用户 `POST /api/followups/{id}/tasks` 新增提醒，`POST /api/followups/{id}/tasks/{task}/confirm|cancel|complete` 确认、取消或完成。商家 403；他人咨询或医生原报告撤权 404；结束后消息写入 409。提醒时间使用带时区 ISO 8601，用户确认之前不触发。关联报告需要独立授权。
+
+通知新增 CONSULTATION_CLOSED 与 RECORD_REMINDER_DUE；后者 resourceId 是待办 ID，其 href 指向所属咨询随访。取消或完成后不再显示该到期通知。
+
 ## 站内通知（V13）
 
 以下完整路径无需再加 `/api`。三角色均可访问，只读写当前登录者可见通知；医生通知还检查当前报告授权，商家不会得到医疗通知。未登录 401、CSRF 缺失 403、他人／已撤权通知 404。普通客户端不能创建通知或重试 Outbox。

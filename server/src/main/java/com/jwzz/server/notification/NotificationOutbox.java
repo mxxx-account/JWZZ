@@ -7,7 +7,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Repository
 public class NotificationOutbox {
-    public enum Type { CONSULTATION_SUBMITTED, DOCTOR_REPLIED, ORDER_ACCEPTED, ORDER_EXPIRED }
+    public enum Type { CONSULTATION_SUBMITTED, DOCTOR_REPLIED, ORDER_ACCEPTED, ORDER_EXPIRED, CONSULTATION_CLOSED, RECORD_REMINDER_DUE }
     public record Event(long id, Type type, long recipientId, long resourceId, int attempts) {}
     private final JdbcTemplate jdbc;
     public NotificationOutbox(JdbcTemplate jdbc) { this.jdbc = jdbc; }

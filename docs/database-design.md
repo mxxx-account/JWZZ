@@ -1,4 +1,4 @@
-# 数据库设计（Flyway V1–V13）
+# 数据库设计（Flyway V1–V14）
 
 MySQL `jwzz` 是当前 Web 平台的业务数据库。外键、唯一约束和 CHECK 约束以迁移 SQL 为准；不同业务表的状态约束范围并不相同。
 
@@ -12,6 +12,10 @@ erDiagram
   assessment_report ||--o{ consultation_request : context
   app_user ||--o{ consultation_request : patient
   consultation_request ||--o{ consultation_message : contains
+  consultation_request ||--o| consultation_closure : closesOnce
+  consultation_request ||--o{ followup_task : followsUp
+  assessment_report |o--o{ followup_task : optionalLink
+  app_user ||--o{ followup_task : creates
   app_user ||--o{ consultation_message : sends
   app_user ||--o{ merchant_store : manages
   merchant_store ||--o{ store_sku : offers

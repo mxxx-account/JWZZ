@@ -97,6 +97,7 @@ public class ConsultationController {
         String answer = request.answer().trim();
         if (answer.length() < 10) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Answer is too short");
         long doctorId = current(principal).id();
+        messages.lockConversation(id);
         if (consultations.findForDoctor(id, doctorId).isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         limiter.check("consultation-reply", doctorId, 20);
         if (!consultations.answer(id, doctorId, answer))
