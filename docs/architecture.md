@@ -1,4 +1,4 @@
-# 当前项目架构（更新至 2026-11-16）
+# 当前项目架构（更新至 2026-11-18）
 
 这张图只描述当前实际接入的 Web 平台。仓库中的 NHANES/DKD 机器学习与 Electron 代码是保留的研究原型，**没有**接入新版报告或聊天业务。
 
@@ -21,7 +21,12 @@ flowchart LR
   A --> M[异步消息与在线心跳]
   A --> C[演示商城、库存与订单]
   A --> SM[订单关联商家消息]
-  I & R & G & M & C & SM --> SQL[(MySQL 8 / Flyway V1-V12)]
+  I & R & G & M & C & SM --> SQL[(MySQL 8 / Flyway V1-V13)]
+  G & M & C -->|与业务同事务| O[(notification_outbox)]
+  O -->|定时扫描 / 行锁跳过已锁记录| W[通知投递 worker]
+  W -->|通知写入和事件完成同事务 / 唯一事件 ID 去重| NI[(user_notification)]
+  N -->|轮询 / 分页 / 已读| NA[通知 API：归属和当前授权检查]
+  NA --> NI
   A -->|公开目录缓存；写接口限流| REDIS[(Redis 7；可选回退)]
 ```
 
@@ -40,6 +45,7 @@ flowchart LR
 | 模型网关 | `ai_service/` | 本机可选进程，负责提供商调用和结构校验；只有它收到模型 API Key |
 | 持久化 | `server/src/main/resources/db/migration` | Flyway 版本化建表；MySQL 是权限和业务状态的事实源 |
 | Redis | `RequestRateLimiter`、`IndicatorCatalogController` | 限流与不含个人信息的指标目录缓存；不可用时限流退化为单实例内存计数 |
+| 站内通知 | `notification/`、`web/src/app/notifications` | 事务 Outbox、后台投递、重试记录、分页通知和独立已读；不发送邮件／短信 |
 | 验收 | `scripts/verify_*.ps1`、`web/tests` | 真实 HTTP 权限/并发回归和浏览器关键流程 |
 
 安全边界：用户只能读自己的指标与报告；医生只能读仍被授权的报告及定向会话；写接口要求登录 Cookie 与 CSRF。所有参考解读仍待临床审核，不输出诊断、处方或治疗方案。公开目录缓存不存个人数据。

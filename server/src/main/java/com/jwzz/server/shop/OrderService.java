@@ -1,6 +1,7 @@
 package com.jwzz.server.shop;
 
 import com.jwzz.server.merchant.MerchantStore;
+import com.jwzz.server.notification.NotificationOutbox;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -15,9 +16,11 @@ public class OrderService {
     private final ShopStore shop;
     private final OrderStore orders;
     private final MerchantStore stores;
+    private final NotificationOutbox outbox;
 
-    public OrderService(ShopStore shop, OrderStore orders, MerchantStore stores) {
+    public OrderService(ShopStore shop, OrderStore orders, MerchantStore stores, NotificationOutbox outbox) {
         this.shop = shop; this.orders = orders; this.stores = stores;
+        this.outbox=outbox;
     }
 
     @Transactional
@@ -94,6 +97,7 @@ public class OrderService {
         if (order.status().equals("PAID")) {
             for (var item : orders.detail(order).items()) orders.consume(item.skuId(), item.quantity(), merchantId);
             orders.transition(orderId, "PAID", "ACCEPTED", "accepted_at");
+            outbox.enqueue("order:"+orderId+":accepted",NotificationOutbox.Type.ORDER_ACCEPTED,order.userId(),orderId);
         } else if (!order.status().equals("ACCEPTED")) throw conflict("只有已模拟支付的订单才能接单");
         return orders.detail(orders.byId(orderId).orElseThrow());
     }
@@ -116,6 +120,7 @@ public class OrderService {
             orders.release(item.skuId(), item.quantity(), order.userId(),
                 target.equals("EXPIRED") ? "ORDER_EXPIRED" : "ORDER_CANCELLED");
         orders.transition(order.id(), "PENDING_PAYMENT", target, "closed_at");
+        if(target.equals("EXPIRED")) outbox.enqueue("order:"+order.id()+":expired",NotificationOutbox.Type.ORDER_EXPIRED,order.userId(),order.id());
     }
 
     private ResponseStatusException conflict(String message) { return new ResponseStatusException(HttpStatus.CONFLICT, message); }

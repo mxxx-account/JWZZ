@@ -4,6 +4,7 @@ import com.jwzz.server.auth.DoctorDirectoryStore;
 import com.jwzz.server.auth.UserStore;
 import com.jwzz.server.common.RequestRateLimiter;
 import com.jwzz.server.report.ReportStore;
+import com.jwzz.server.notification.NotificationOutbox;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -39,10 +40,12 @@ public class MessageController {
     private final MessageStore messages;
     private final ReportStore reports;
     private final RequestRateLimiter limiter;
+    private final NotificationOutbox outbox;
     public MessageController(UserStore users, DoctorDirectoryStore doctors, ConsultationStore consultations,
-                             MessageStore messages, ReportStore reports, RequestRateLimiter limiter) {
+                             MessageStore messages, ReportStore reports, RequestRateLimiter limiter, NotificationOutbox outbox) {
         this.users = users; this.doctors = doctors; this.consultations = consultations;
         this.messages = messages; this.reports = reports; this.limiter = limiter;
+        this.outbox=outbox;
     }
 
     @GetMapping("/conversations")
@@ -101,7 +104,9 @@ public class MessageController {
             if (!patientCanSend(item)) throw new ResponseStatusException(HttpStatus.CONFLICT, "Doctor access was revoked");
             limiter.check("message-user", user.id(), 30);
         }
-        return messages.add(id, user.id(), body, request.clientMessageId());
+        var message=messages.add(id, user.id(), body, request.clientMessageId());
+        if(doctor) outbox.enqueue("consultation-message:"+message.id()+":reply",NotificationOutbox.Type.DOCTOR_REPLIED,item.userId(),id);
+        return message;
     }
 
     @PostMapping("/conversations/{id}/read")

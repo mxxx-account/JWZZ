@@ -35,7 +35,7 @@ class ChatPaginationIntegrationTest {
             var messages = new MessageStore(jdbc);
             var doctors = new DoctorDirectoryStore(jdbc);
             doctors.upsert(doctor, "测试医生", "GENERAL");
-            var controller = new MessageController(users, doctors, consultations, messages, reports, new RequestRateLimiter(null, false));
+            var controller = new MessageController(users, doctors, consultations, messages, reports, new RequestRateLimiter(null, false), org.mockito.Mockito.mock(com.jwzz.server.notification.NotificationOutbox.class));
             long chat = consultations.create(report, user, doctor, "test").id();
             assertTrue(consultations.claim(chat, doctor));
             var ids = new ArrayList<Long>();

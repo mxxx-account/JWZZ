@@ -1,5 +1,19 @@
 # HTTP 接口文档（当前实现）
 
+## 站内通知（V13）
+
+以下完整路径无需再加 `/api`。三角色均可访问，只读写当前登录者可见通知；医生通知还检查当前报告授权，商家不会得到医疗通知。未登录 401、CSRF 缺失 403、他人／已撤权通知 404。普通客户端不能创建通知或重试 Outbox。
+
+| 方法与路径 | 请求 | 响应 |
+| --- | --- | --- |
+| GET `/api/notifications` | `size=20`（1–100）、可选排他 `beforeId>0`、`unreadOnly=false` | `{items,hasMore}`；ID 倒序；每项 `id,type,resourceId,title,description,href,createdAt,readAt` |
+| GET `/api/notifications/unread-count` | 无 | `{unreadCount}`；当前账号所有可访问未读通知，不限当前页 |
+| POST `/api/notifications/{id}/read` | 无请求体；需要 CSRF | 204；重复确认安全，不改变聊天已读游标 |
+
+四类事件：`CONSULTATION_SUBMITTED`、`DOCTOR_REPLIED`、`ORDER_ACCEPTED`、`ORDER_EXPIRED`。href 为服务端固定业务路径；通知不包含报告或消息正文。通知列表只是提示，目标业务接口再次鉴权。实现与重试说明见[通知中心验收](notifications-acceptance.md)。
+
+## 原有业务接口
+
 本地默认后端 `http://localhost:8080`；完整 Compose 环境映射为 `http://localhost:8081`。以下路径均以 `/api` 开头。登录采用会话 Cookie；跨域浏览器请求需 `credentials: include`。除 GET 外，先请求 `GET /auth/csrf`，把返回的 `token` 放入 `X-XSRF-TOKEN` 头。未登录一般 401，角色不符 403，非本人/未授权资源通常 404，业务状态冲突 409，限流 429。示例均为演示数据。
 
 | 方法与路径 | 角色 | 请求要点 | 成功结果 |

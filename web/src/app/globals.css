@@ -66,6 +66,32 @@ input { width: 100%; border: 1px solid #a9c1ca; border-radius: 8px; padding: 11p
 @media (max-width: 620px) { .merchant-open-control { flex-direction: column; align-items: stretch; } }
 .app-nav { position: sticky; top: 0; z-index: 30; }
 .app-nav a[aria-current="page"] { color: #69e2d9; }
+.notification-nav { position: relative; white-space: nowrap; }
+.notification-count { display: inline-block; min-width: 18px; margin-left: 5px; padding: 2px 5px; border-radius: 20px; background: #d95349; color: white; font-size: 11px; text-align: center; }
+.notification-center { max-width: 1080px; margin: 34px auto; padding: 0 24px 32px; }
+.notification-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.notification-heading h1 { font-size: 36px; letter-spacing: 0; margin: 8px 0; }
+.notification-heading p { color: #607b87; }
+.notification-heading .notification-kicker { color: #126a69; font-weight: 700; }
+.notification-filters { display: flex; gap: 10px; margin: 22px 0; }
+.notification-filters button, .notification-actions .secondary { background: #e7f0f1; color: #126a69; }
+.notification-filters .active { background: #126a69; color: white; }
+.notification-list { display: grid; gap: 14px; }
+.notification-item { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.notification-item.unread { border-left: 4px solid #1b9e98; }
+.notification-item h2 { margin: 8px 0; font-size: 20px; }
+.notification-item p { margin: 8px 0; color: #526978; }
+.notification-kind, .notification-item small { color: #607b87; font-size: 13px; }
+.notification-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.notification-empty { background: white; border-radius: 14px; padding: 48px 24px; text-align: center; color: #607b87; }
+.notification-more { display: block; margin: 24px auto; }
+@media(max-width: 650px) {
+  .notification-center { padding: 0 14px 24px; }
+  .notification-heading, .notification-item { align-items: flex-start; flex-direction: column; }
+  .notification-item { padding: 18px; }
+  .chat-nav.app-nav { overflow-x: auto; white-space: nowrap; }
+  .chat-nav.app-nav > * { flex-shrink: 0; }
+}
 nav { display: flex; gap: 24px; align-items: center; border-bottom: 1px solid #dce7ed; padding-bottom: 20px; }
 nav a { color: #126a69; font-weight: 800; text-decoration: none; }
 nav button { margin-left: auto; background: #e7f0f1; color: #126a69; }

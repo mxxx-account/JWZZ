@@ -34,6 +34,12 @@ export default function PharmacyPage() {
     api<CurrentUser>("/api/auth/me").then(current => {
       if (current.role !== "USER") { router.replace(homeForRole(current.role)); return; }
       setUser(current);
+      const requested=Number(new URLSearchParams(window.location.search).get("order"));
+      if(Number.isSafeInteger(requested) && requested>0) {
+        setView("orders");
+        void api<ShopOrder[]>("/api/shop/orders").then(setOrders).catch(()=>setError("订单读取失败，请稍后重试。"));
+        void api<ShopOrderDetail>(`/api/shop/orders/${requested}`).then(setSelectedOrder).catch(()=>setError("订单不存在或无权访问。"));
+      }
       void api<CartItem[]>("/api/shop/cart").then(setCart).catch(() => setError("购物车读取失败，请刷新后重试。"));
     }).catch(() => router.replace("/"));
   }, [router]);

@@ -31,7 +31,7 @@ class OrderServiceIntegrationTest {
         var catalog = new MerchantCatalogStore(jdbc);
         var shop = new ShopStore(jdbc);
         var orderStore = new OrderStore(jdbc);
-        var service = new OrderService(shop, orderStore, merchants);
+        var service = new OrderService(shop, orderStore, merchants, org.mockito.Mockito.mock(com.jwzz.server.notification.NotificationOutbox.class));
         String suffix = UUID.randomUUID().toString();
         long merchant = 0, user1 = 0, user2 = 0, store = 0;
         try {

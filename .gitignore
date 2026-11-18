@@ -2,6 +2,7 @@
 **/node_modules/
 **/.next/
 **/.next-pagination/
+**/.next-notifications/
 *.tsbuildinfo
 **/test-results/
 **/playwright-report/

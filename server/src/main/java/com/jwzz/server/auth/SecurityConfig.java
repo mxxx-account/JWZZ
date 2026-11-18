@@ -56,6 +56,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/reports/*/assistant", "/api/reports/*/assistant/**").hasRole("USER")
                 .requestMatchers("/api/reports/**").hasAnyRole("USER", "DOCTOR")
                 .requestMatchers("/api/auth/**").authenticated()
+                .requestMatchers("/api/notifications", "/api/notifications/**").hasAnyRole("USER", "DOCTOR", "MERCHANT")
                 .anyRequest().denyAll())
             .formLogin(login -> login.loginProcessingUrl("/api/auth/login")
                 .usernameParameter("email")

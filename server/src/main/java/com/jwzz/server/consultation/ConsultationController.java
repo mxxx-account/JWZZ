@@ -4,6 +4,7 @@ import com.jwzz.server.auth.UserStore;
 import com.jwzz.server.auth.DoctorDirectoryStore;
 import com.jwzz.server.common.RequestRateLimiter;
 import com.jwzz.server.report.ReportStore;
+import com.jwzz.server.notification.NotificationOutbox;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -33,10 +34,12 @@ public class ConsultationController {
     private final MessageStore messages;
     private final DoctorDirectoryStore doctors;
     private final RequestRateLimiter limiter;
+    private final NotificationOutbox outbox;
     public ConsultationController(UserStore users, ReportStore reports, ConsultationStore consultations,
-                                  MessageStore messages, DoctorDirectoryStore doctors, RequestRateLimiter limiter) {
+                                  MessageStore messages, DoctorDirectoryStore doctors, RequestRateLimiter limiter, NotificationOutbox outbox) {
         this.users = users; this.reports = reports; this.consultations = consultations;
         this.messages = messages; this.doctors = doctors; this.limiter = limiter;
+        this.outbox=outbox;
     }
 
     @GetMapping("/consultations")
@@ -69,6 +72,7 @@ public class ConsultationController {
         limiter.check("consultation-create", userId, 5);
         var created = consultations.create(report.id(), userId, doctorId, question);
         messages.add(created.id(), userId, question);
+        outbox.enqueue("consultation:"+created.id()+":submitted",NotificationOutbox.Type.CONSULTATION_SUBMITTED,doctorId,created.id());
         return created;
     }
 
@@ -97,7 +101,9 @@ public class ConsultationController {
         limiter.check("consultation-reply", doctorId, 20);
         if (!consultations.answer(id, doctorId, answer))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Claim this consultation or restore report access first");
-        messages.add(id, doctorId, answer);
+        var message=messages.add(id, doctorId, answer);
+        outbox.enqueue("consultation-message:"+message.id()+":reply",NotificationOutbox.Type.DOCTOR_REPLIED,
+            consultations.find(id).orElseThrow().userId(),id);
         return consultations.find(id).orElseThrow();
     }
 

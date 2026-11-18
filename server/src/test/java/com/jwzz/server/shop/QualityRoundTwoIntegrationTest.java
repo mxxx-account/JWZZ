@@ -34,7 +34,7 @@ class QualityRoundTwoIntegrationTest {
             tx = new TransactionTemplate(new DataSourceTransactionManager(ds));
             shop = new ShopStore(db); orders = new OrderStore(db);
             var stores = new MerchantStore(db);
-            service = new OrderService(shop, orders, stores);
+            service = new OrderService(shop, orders, stores, org.mockito.Mockito.mock(com.jwzz.server.notification.NotificationOutbox.class));
             try {
                 merchant = user("MERCHANT");
                 store = stores.create(merchant, "二轮测试店-" + UUID.randomUUID(), "", "武汉", "虚构地址").id();

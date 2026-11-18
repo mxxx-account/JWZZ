@@ -1,6 +1,6 @@
-# 数据库设计（Flyway V1–V11）
+# 数据库设计（Flyway V1–V13）
 
-MySQL `jwzz` 是当前 Web 平台的业务数据库。下图中的外键、唯一约束以迁移 SQL 为准；状态值由应用约定，尚未用数据库 `CHECK` 约束。
+MySQL `jwzz` 是当前 Web 平台的业务数据库。外键、唯一约束和 CHECK 约束以迁移 SQL 为准；不同业务表的状态约束范围并不相同。
 
 ```mermaid
 erDiagram
@@ -22,6 +22,9 @@ erDiagram
   shop_order ||--o| shop_conversation : has
   shop_conversation ||--o{ shop_message : contains
   app_user ||--o{ shop_message : sends
+  app_user ||--o{ notification_outbox : receivesEvent
+  notification_outbox ||--o| user_notification : deliversOnce
+  app_user ||--o{ user_notification : receivesNotice
 
   app_user {
     BIGINT id PK
