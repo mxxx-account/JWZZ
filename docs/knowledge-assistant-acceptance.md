@@ -46,6 +46,10 @@ python .\scripts\knowledge_retrieval_lab.py --threshold 0.60
 
 Edge 浏览器回归 22 项通过（约 109 秒，0 失败、0 跳过），其中新增知识解释 1 项：真实 API 命中并核对 CDC/AHA 两个链接、混合问题拒答且无引用、切换报告清空、断网重试。其余覆盖原有草稿、患者医生、随访、通知、消息和订单。机器记录：`.local-run/knowledge-e2e.json`、`server/target/surefire-reports`；网页测试输出截图名为 `source-backed-explanation.png`。
 
+## 报告组件重复 key 修复
+
+2026-11-19 补充回归：打开血压报告时，知识解释和咨询草稿是同级组件，原本都使用报告 ID 作为 React `key`，导致重复告警。改为 `knowledge-${report.id}` / `assistant-${report.id}`，保留切换报告时重置组件状态的行为。Edge 用例同时检查控制台：修复前捕获到两份虚构报告的重复告警，修复后相关 4 项浏览器测试全部通过。本机机器记录为 `.local-run/report-key-before.json` 和 `.local-run/report-key-after.json`。
+
 ## 复现命令
 
 项目根目录、使用已有 Maven 缓存和本机 MySQL，先停止同一数据库上的应用调度器：

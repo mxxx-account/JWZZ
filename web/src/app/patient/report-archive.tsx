@@ -160,8 +160,8 @@ export function ReportArchive({ refreshKey, focusId }: { refreshKey: number; foc
         {report && <>
           <div className="report-heading"><h2>{report.content.title ?? `报告 #${report.id}`}</h2><small>#{report.id} · {new Date(report.createdAt).toLocaleString("zh-CN")}</small></div>
           <ReportContent report={report} />
-          {report.content.category === "BP" && <ReportKnowledge key={report.id} reportId={report.id} />}
-          <ReportAssistant key={report.id} reportId={report.id} canFill={grants.length > 0} busy={busy} question={question} onFill={setQuestion} />
+          {report.content.category === "BP" && <ReportKnowledge key={`knowledge-${report.id}`} reportId={report.id} />}
+          <ReportAssistant key={`assistant-${report.id}`} reportId={report.id} canFill={grants.length > 0} busy={busy} question={question} onFill={setQuestion} />
           <p className="note">当前授权：{grants.length ? grants.map(grant => doctors.find(doctor => doctor.id === grant.doctorId)?.displayName ?? grant.doctorEmail).join("、") : "无"}</p>
           <DoctorChooser report={report} allReports={contextReports.length ? contextReports : [report]} doctors={doctors} grants={grants} selectedId={selectedDoctorId} busy={busy} onSelect={setSelectedDoctorId} onGrant={doctor => action(() => api<Grant>(`/api/reports/${report.id}/grants`, "POST", { doctorEmail: doctor.email }), "授权成功，可以向这位医生提交咨询。")}
             onGrantEmail={email => action(() => api<Grant>(`/api/reports/${report.id}/grants`, "POST", { doctorEmail: email }), "授权成功，可以向这位医生提交咨询。", granted => setSelectedDoctorId(granted.doctorId))} />

@@ -54,7 +54,11 @@ function generateButton(page: Page) { return assistant(page).getByRole("button",
 function draftInput(page: Page) { return assistant(page).getByRole("textbox", { name: "咨询草稿", exact: true }); }
 function questionInput(page: Page) { return page.getByRole("textbox", { name: "咨询问题", exact: true }); }
 
-test("血压知识解释引用来源，未覆盖的问题拒答，切换报告不保留内容", async ({ page }, info) => {
+test("血压知识解释引用来源，切换报告不保留内容且无重复 key", async ({ page }, info) => {
+  const duplicateKeys: string[] = [];
+  page.on("console", message => {
+    if (/two children with the same key/i.test(message.text())) duplicateKeys.push(message.text());
+  });
   await loginSynthetic(page.request, "USER");
   const first = await generateReport(page.request, await reading(page.request, "2026-01-04T09:00:00", "HOME", 121, 76));
   const second = await generateReport(page.request, await reading(page.request, "2026-01-05T09:00:00", "CLINIC", 129, 77));
@@ -64,6 +68,8 @@ test("血压知识解释引用来源，未覆盖的问题拒答，切换报告�
   const field = panel.getByRole("textbox", { name: "输入知识问题" });
   const ask = panel.getByRole("button", { name: "查找资料并解释" });
   await panel.getByRole("button", { name: "为什么这两次记录不能直接比较？" }).click();
+  await expect(assistant(page)).toBeVisible();
+  expect(duplicateKeys).toEqual([]);
   await ask.click();
   await expect(panel.getByRole("link", { name: /CDC/ })).toHaveAttribute("href", /^https:\/\/www\.cdc\.gov\//);
   await expect(panel.getByRole("link", { name: /AHA/ })).toHaveAttribute("href", /^https:\/\/www\.heart\.org\//);
@@ -84,6 +90,7 @@ test("血压知识解释引用来源，未覆盖的问题拒答，切换报告�
   await ask.click();
   await expect(panel.getByRole("link", { name: /CDC/ })).toBeVisible();
   await expect(panel.getByRole("alert")).toHaveCount(0);
+  expect(duplicateKeys).toEqual([]);
 });
 function fillButton(page: Page) { return assistant(page).getByRole("button", { name: "填入咨询草稿", exact: true }); }
 
