@@ -53,6 +53,38 @@ function assistant(page: Page) { return page.getByRole("region", { name: assista
 function generateButton(page: Page) { return assistant(page).getByRole("button", { name: "生成咨询草稿", exact: true }); }
 function draftInput(page: Page) { return assistant(page).getByRole("textbox", { name: "咨询草稿", exact: true }); }
 function questionInput(page: Page) { return page.getByRole("textbox", { name: "咨询问题", exact: true }); }
+
+test("血压知识解释引用来源，未覆盖的问题拒答，切换报告不保留内容", async ({ page }, info) => {
+  await loginSynthetic(page.request, "USER");
+  const first = await generateReport(page.request, await reading(page.request, "2026-01-04T09:00:00", "HOME", 121, 76));
+  const second = await generateReport(page.request, await reading(page.request, "2026-01-05T09:00:00", "CLINIC", 129, 77));
+  await page.goto("/patient?view=reports");
+  await selectReport(page, first);
+  const panel = page.getByRole("region", { name: "带来源的知识解释" });
+  const field = panel.getByRole("textbox", { name: "输入知识问题" });
+  const ask = panel.getByRole("button", { name: "查找资料并解释" });
+  await panel.getByRole("button", { name: "为什么这两次记录不能直接比较？" }).click();
+  await ask.click();
+  await expect(panel.getByRole("link", { name: /CDC/ })).toHaveAttribute("href", /^https:\/\/www\.cdc\.gov\//);
+  await expect(panel.getByRole("link", { name: /AHA/ })).toHaveAttribute("href", /^https:\/\/www\.heart\.org\//);
+  await expect(panel).toContainText("bp-basics-2026-11-19-v1");
+  await panel.screenshot({ path: info.outputPath("source-backed-explanation.png") });
+  await field.fill("为什么要记录测量条件，我需要停药吗？");
+  await ask.click();
+  await expect(panel).toContainText("资料没有覆盖这个问法");
+  await expect(panel.getByRole("link")).toHaveCount(0);
+  await selectReport(page, second);
+  await expect(field).toHaveValue("");
+  await expect(panel).not.toContainText("资料没有覆盖这个问法");
+  await panel.getByRole("button", { name: "为什么要记录测量条件？" }).click();
+  await page.route("**/assistant/knowledge", route => route.request().method() === "POST" ? route.abort() : route.continue());
+  await ask.click();
+  await expect(panel.getByRole("alert")).toContainText("暂时无法查询资料");
+  await page.unroute("**/assistant/knowledge");
+  await ask.click();
+  await expect(panel.getByRole("link", { name: /CDC/ })).toBeVisible();
+  await expect(panel.getByRole("alert")).toHaveCount(0);
+});
 function fillButton(page: Page) { return assistant(page).getByRole("button", { name: "填入咨询草稿", exact: true }); }
 
 async function authorizeInUI(page: Page, doctorEmail: string) {

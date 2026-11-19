@@ -1,5 +1,11 @@
 # HTTP 接口文档（当前实现）
 
+## 血压知识解释
+
+- `GET /api/reports/{reportId}/assistant/knowledge` 返回已核对的快捷问题。
+- `POST` 同路径（需 CSRF），请求体 `{"question":"为什么要记录测量条件？"}`。非空且最多 200 字符，仅血压报告所有者可访问。
+- 返回 `ANSWERED` 或 `INSUFFICIENT_EVIDENCE`；每段有机构、标题、章节和链接，另有资料库版本。问法未覆盖时不生成替代答案或引用。功能只用本地资料，不调用外部 AI。
+
 ## 模拟履约与退款（V15）
 
 完整参数、状态机及库存语义见[第四阶段契约](fulfillment-acceptance.md#http-契约)。用户/商家分别通过 `GET /api/shop/orders/{id}/lifecycle`、`GET /api/merchant/orders/{id}/lifecycle` 查询。商家 POST `.../ship` 发货，用户 POST `.../receive` 收货；用户 POST `.../refunds` 申请整单退款，商家 POST `.../refunds/{refund}/review` 审核，用户 POST `.../refunds/{refund}/return` 模拟退货，商家 POST `.../refunds/{refund}/inspect` 验收（RESTOCK/DISCARD）。无真实资金或物流，金额由订单快照决定，退款流水一单最多一笔。

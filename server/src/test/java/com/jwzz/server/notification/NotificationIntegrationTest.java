@@ -124,10 +124,10 @@ class NotificationIntegrationTest {
                 assertEquals(1,((Number)state.get("is_delayed")).intValue());
             }
             // Manual redrive after repair; no unauthenticated HTTP retry endpoint.
-            f.db.update("UPDATE notification_outbox SET status='PENDING',attempts=0,available_at=NOW(6) WHERE id=?",event);
+            f.db.update("UPDATE notification_outbox SET status='PENDING',attempts=0,available_at=DATE_SUB(NOW(6),INTERVAL 1 SECOND) WHERE id=?",event);
             assertTrue(f.worker(f.inbox).dispatchOne()); // New worker instance reads durable state.
             assertEquals(1,f.count("user_notification"));
-            f.db.update("UPDATE notification_outbox SET status='PENDING',available_at=NOW(6) WHERE id=?",event);
+            f.db.update("UPDATE notification_outbox SET status='PENDING',available_at=DATE_SUB(NOW(6),INTERVAL 1 SECOND) WHERE id=?",event);
             assertTrue(f.worker(f.inbox).dispatchOne()); // Replay must not create a second inbox row.
             assertEquals(1,f.count("user_notification"));
             assertEquals("DELIVERED",f.db.queryForObject("SELECT status FROM notification_outbox WHERE id=?",String.class,event));

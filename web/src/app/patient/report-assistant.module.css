@@ -49,3 +49,8 @@
 .merge button { padding: 8px 12px; }
 .feedback { color: #145952; font-size: 14px; font-weight: 600; }
 .feedback[role="alert"] { color: #8b2419; }
+.knowledgeForm { display: grid; gap: 8px; margin: 12px 0; }
+.knowledgeForm button { justify-self: start; }
+.knowledgeAnswer { overflow-wrap: anywhere; }
+.knowledgeAnswer article { padding: 8px 0; border-bottom: 1px solid #dce7ed; }
+.knowledgeAnswer article small { display: block; margin-top: 4px; }

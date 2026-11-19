@@ -28,6 +28,13 @@ public class ReportStore {
             userId, id).stream().findFirst();
     }
 
+    public Optional<String> ownedCategory(long userId, long id) {
+        return jdbc.queryForList("""
+            SELECT COALESCE(JSON_UNQUOTE(JSON_EXTRACT(report_json, '$.category')), '')
+            FROM assessment_report WHERE user_id=? AND id=?
+            """, String.class, userId, id).stream().findFirst();
+    }
+
     public Optional<Report> findByUserKey(long userId, String idempotencyKey) {
         return jdbc.query("SELECT id, user_id, rule_set_version, report_json, created_at FROM assessment_report WHERE user_id=? AND idempotency_key=?",
             (rs, row) -> new Report(rs.getLong("id"), rs.getLong("user_id"), rs.getString("rule_set_version"), rs.getString("report_json"), rs.getTimestamp("created_at").toLocalDateTime()),

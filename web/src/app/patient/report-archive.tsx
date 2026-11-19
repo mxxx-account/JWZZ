@@ -7,6 +7,7 @@ import { api, type Consultation, type Doctor, type Grant, type Report } from "@/
 import { DoctorChooser } from "./doctor-chooser";
 import { ReportContent } from "../report-content";
 import { CONSULTATION_QUESTION_LIMIT, ReportAssistant } from "./report-assistant";
+import { ReportKnowledge } from "./report-knowledge";
 
 type Summary = { id: number; title: string | null; category: string | null; createdAt: string };
 type Page = { items: Summary[]; total: number; page: number; size: number };
@@ -159,6 +160,7 @@ export function ReportArchive({ refreshKey, focusId }: { refreshKey: number; foc
         {report && <>
           <div className="report-heading"><h2>{report.content.title ?? `报告 #${report.id}`}</h2><small>#{report.id} · {new Date(report.createdAt).toLocaleString("zh-CN")}</small></div>
           <ReportContent report={report} />
+          {report.content.category === "BP" && <ReportKnowledge key={report.id} reportId={report.id} />}
           <ReportAssistant key={report.id} reportId={report.id} canFill={grants.length > 0} busy={busy} question={question} onFill={setQuestion} />
           <p className="note">当前授权：{grants.length ? grants.map(grant => doctors.find(doctor => doctor.id === grant.doctorId)?.displayName ?? grant.doctorEmail).join("、") : "无"}</p>
           <DoctorChooser report={report} allReports={contextReports.length ? contextReports : [report]} doctors={doctors} grants={grants} selectedId={selectedDoctorId} busy={busy} onSelect={setSelectedDoctorId} onGrant={doctor => action(() => api<Grant>(`/api/reports/${report.id}/grants`, "POST", { doctorEmail: doctor.email }), "授权成功，可以向这位医生提交咨询。")}

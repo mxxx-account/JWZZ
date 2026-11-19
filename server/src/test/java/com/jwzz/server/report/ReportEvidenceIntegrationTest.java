@@ -42,6 +42,7 @@ class ReportEvidenceIntegrationTest {
     private static final String DIA = "diastolic_bp";
     private static final String PASSWORD = "SyntheticAgentDemo123!";
     private static final String EVIDENCE = "/api/reports/{reportId}/assistant/evidence";
+    private static final String KNOWLEDGE = "/api/reports/{reportId}/assistant/knowledge";
 
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
@@ -180,6 +181,54 @@ class ReportEvidenceIntegrationTest {
         mvc.perform(get(EVIDENCE, report).session(doctorSession)).andExpect(status().isForbidden());
         mvc.perform(get("/api/reports/{id}", report).session(doctorSession)).andExpect(status().isOk());
         mvc.perform(get(EVIDENCE, report).session(ownerSession)).andExpect(status().isOk());
+    }
+
+    @Test
+    void knowledgeAnswersWithVersionAndSourcesOrAbstainsWithoutReportValues() throws Exception {
+        long report = generation.generate(owner.id(), bloodPressure(owner.id(), ANCHOR, "HOME", "129.5001", "79")).id();
+        mvc.perform(get(KNOWLEDGE, report).session(ownerSession))
+            .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(jsonPath("$[0].id").value("bp-measurement-context"));
+        mvc.perform(question(report, ownerSession, "家里和诊室量的血压能直接比吗？"))
+            .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(jsonPath("$.status").value("ANSWERED"))
+            .andExpect(jsonPath("$.topic.id").value("bp-comparable-records"))
+            .andExpect(jsonPath("$.corpusVersion").value("bp-basics-2026-11-19-v1"))
+            .andExpect(jsonPath("$.passages[0].section").value("Things that can affect your blood pressure reading"))
+            .andExpect(jsonPath("$.passages[1].url").isNotEmpty())
+            .andExpect(jsonPath("$.current").doesNotExist());
+        mvc.perform(question(report, ownerSession, "为什么要记录测量条件，我需要停药吗？"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("INSUFFICIENT_EVIDENCE"))
+            .andExpect(jsonPath("$.passages").isEmpty());
+        mvc.perform(question(report, ownerSession, "KNOWLEDGE-LOG-PRIVACY-SENTINEL".repeat(10))).andExpect(status().isBadRequest());
+        mvc.perform(question(report, ownerSession, "   ")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void knowledgeChecksReportKindOwnershipRoleAndCsrf() throws Exception {
+        long report = generation.generate(owner.id(), bloodPressure(owner.id(), ANCHOR, "HOME", "128", "79")).id();
+        long glucose = reports.saveGenerated(owner.id(), UUID.randomUUID().toString(), "test", "{\"category\":\"GLUCOSE\"}").id();
+        var stranger = login(syntheticUser("USER").email());
+        var doctor = syntheticUser("DOCTOR");
+        var doctorSession = login(doctor.email());
+        reports.grant(report, doctor.id());
+        mvc.perform(get(KNOWLEDGE, report)).andExpect(status().isUnauthorized());
+        mvc.perform(get(KNOWLEDGE, report).session(stranger)).andExpect(status().isNotFound());
+        mvc.perform(get(KNOWLEDGE, glucose).session(ownerSession)).andExpect(status().isConflict());
+        mvc.perform(question(report, doctorSession, "为什么要记录测量条件？")).andExpect(status().isForbidden());
+        mvc.perform(question(report, stranger, "为什么要记录测量条件？")).andExpect(status().isNotFound());
+        mvc.perform(post(KNOWLEDGE, report).session(ownerSession)
+            .contentType(MediaType.APPLICATION_JSON).content("{\"question\":\"为什么要记录测量条件？\"}"))
+            .andExpect(status().isForbidden());
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder question(
+        long id, MockHttpSession session, String text) throws Exception {
+        var csrf = mvc.perform(get("/api/auth/csrf").session(session)).andExpect(status().isOk()).andReturn().getResponse();
+        String token = mapper.readTree(csrf.getContentAsString()).path("token").asText();
+        return post(KNOWLEDGE, id).session(session).contentType(MediaType.APPLICATION_JSON)
+            .cookie(csrf.getCookie("XSRF-TOKEN")).header("X-XSRF-TOKEN", token)
+            .content(mapper.writeValueAsString(Map.of("question", text)));
     }
 
     private UserStore.User syntheticUser(String role) {

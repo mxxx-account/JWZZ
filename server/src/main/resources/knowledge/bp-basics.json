@@ -1,0 +1,64 @@
+{
+  "version": "bp-basics-2026-11-19-v1",
+  "entries": [
+    {
+      "id": "bp-measurement-context",
+      "status": "SOURCE_CHECKED",
+      "title": "为什么要记录测量条件？",
+      "aliases": ["测量条件为什么要记", "量血压为什么要写测量条件", "为什么量血压要记姿势", "测血压前运动有影响吗", "量血压时说话会影响读数吗"],
+      "passages": [
+        {
+          "text": "测量前的活动、摄入的饮品和坐姿都可能影响血压读数。记录当时的测量条件，有助于解释为什么两次读数可能不同。",
+          "publisher": "美国疾病控制与预防中心（CDC）",
+          "title": "Measuring Your Blood Pressure",
+          "section": "Things that can affect your blood pressure reading",
+          "url": "https://www.cdc.gov/high-blood-pressure/measure/index.html"
+        }
+      ]
+    },
+    {
+      "id": "bp-comparable-records",
+      "status": "SOURCE_CHECKED",
+      "title": "为什么这两次记录不能直接比较？",
+      "aliases": ["为什么两次血压不能直接比较", "家里和诊室量的血压能直接比吗", "血压记录在什么条件下可以比较", "两次血压对比要看什么", "为什么要在相似条件下比较血压"],
+      "passages": [
+        {
+          "text": "诊室紧张、测量前的活动以及姿势都可能影响读数。测量场景不同时，不宜仅凭两次数字的差值判断发生了什么变化。",
+          "publisher": "美国疾病控制与预防中心（CDC）",
+          "title": "Measuring Your Blood Pressure",
+          "section": "Things that can affect your blood pressure reading",
+          "url": "https://www.cdc.gov/high-blood-pressure/measure/index.html"
+        },
+        {
+          "text": "就居家记录而言，美国心脏协会建议尽量在相同时间测量，并保存读数。比较时，可以先核对时间、测量场景和操作是否相近。",
+          "publisher": "美国心脏协会（AHA）",
+          "title": "Home Blood Pressure Monitoring",
+          "section": "How to use a home blood pressure monitor",
+          "url": "https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings/monitoring-your-blood-pressure-at-home"
+        }
+      ]
+    },
+    {
+      "id": "bp-consultation-prep",
+      "status": "SOURCE_CHECKED",
+      "title": "去咨询医生之前，我还需要整理什么？",
+      "aliases": ["咨询医生前要准备什么", "问医生前要整理什么", "看医生前需要带什么资料", "看医生前怎么整理血压记录", "怎么准备血压咨询"],
+      "passages": [
+        {
+          "text": "先列出想和医生讨论的问题，把最重要的排在前面。",
+          "publisher": "美国国立老龄研究所（NIA）",
+          "title": "How To Prepare for a Doctor's Appointment",
+          "section": "Make a list and prioritize your concerns",
+          "url": "https://www.nia.nih.gov/health/medical-care-and-appointments/how-prepare-doctors-appointment"
+        },
+        {
+          "text": "可以把已有的居家血压读数整理成记录，咨询时带上；若血压计保存了读数，也可在就诊时带上设备供医生参考。",
+          "publisher": "美国心脏协会（AHA）",
+          "title": "Home Blood Pressure Monitoring",
+          "section": "How to use a home blood pressure monitor",
+          "url": "https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings/monitoring-your-blood-pressure-at-home"
+        }
+      ]
+    }
+  ]
+}
