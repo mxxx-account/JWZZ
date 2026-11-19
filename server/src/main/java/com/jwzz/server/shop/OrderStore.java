@@ -117,6 +117,13 @@ public class OrderStore {
             """, skuId, actorId, delta, before, after, reason, note);
     }
 
+    public void restock(long skuId,int quantity,long actor,String reason,long orderId) {
+        Stock stock=lockStock(skuId).orElseThrow();
+        int after=Math.addExact(stock.available(),quantity);
+        jdbc.update("UPDATE store_inventory SET available=? WHERE sku_id=?",after,skuId);
+        ledger(skuId,actor,quantity,stock.available(),after,reason,"模拟退款入库，订单 #"+orderId);
+    }
+
     public long create(long userId, long storeId, String key, long total, LocalDateTime expiresAt) {
         var keys = new GeneratedKeyHolder();
         jdbc.update(connection -> {

@@ -1,5 +1,9 @@
 # HTTP 接口文档（当前实现）
 
+## 模拟履约与退款（V15）
+
+完整参数、状态机及库存语义见[第四阶段契约](fulfillment-acceptance.md#http-契约)。用户/商家分别通过 `GET /api/shop/orders/{id}/lifecycle`、`GET /api/merchant/orders/{id}/lifecycle` 查询。商家 POST `.../ship` 发货，用户 POST `.../receive` 收货；用户 POST `.../refunds` 申请整单退款，商家 POST `.../refunds/{refund}/review` 审核，用户 POST `.../refunds/{refund}/return` 模拟退货，商家 POST `.../refunds/{refund}/inspect` 验收（RESTOCK/DISCARD）。无真实资金或物流，金额由订单快照决定，退款流水一单最多一笔。
+
 ## 咨询结束与随访（V14）
 
 见[完整契约与状态说明](followups-acceptance.md#数据库与-api)。`GET /api/followups` 支持 beforeId/size 游标；`GET /api/followups/{id}` 查询小结待办；医生 `POST /api/followups/{id}/close` 结束；用户 `POST /api/followups/{id}/tasks` 新增提醒，`POST /api/followups/{id}/tasks/{task}/confirm|cancel|complete` 确认、取消或完成。商家 403；他人咨询或医生原报告撤权 404；结束后消息写入 409。提醒时间使用带时区 ISO 8601，用户确认之前不触发。关联报告需要独立授权。

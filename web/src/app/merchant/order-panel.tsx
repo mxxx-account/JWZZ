@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { OrderLifecycle } from "../order-lifecycle";
 import { api, type ShopOrder, type ShopOrderDetail } from "@/lib/api";
 
 const statusText: Record<ShopOrder["status"], string> = {
   PENDING_PAYMENT: "待用户模拟支付", PAID: "待接单", ACCEPTED: "已接单",
-  CANCELLED: "用户已取消", EXPIRED: "超时关闭",
+  CANCELLED: "用户已取消", EXPIRED: "超时关闭", SHIPPED: "已模拟发货", COMPLETED: "已完成", REFUND_PENDING: "退款处理中", REFUNDED: "已模拟退款",
 };
 
 export function OrderPanel({ onInventoryChanged }: { onInventoryChanged: () => void }) {
@@ -47,6 +48,6 @@ export function OrderPanel({ onInventoryChanged }: { onInventoryChanged: () => v
       <div><strong>订单 #{order.id} · {statusText[order.status]}</strong><p>用户 #{order.userId} · ¥{(order.totalCents / 100).toFixed(2)} · {new Date(order.createdAt).toLocaleString("zh-CN")}</p></div>
       <div className="merchant-order-actions"><button type="button" onClick={() => void open(order.id)}>查看明细</button>{order.status === "PAID" && <button type="button" disabled={busy} onClick={() => void accept(order.id)}>接受演示订单</button>}</div>
     </article>)}</div>}
-    {selected && <div className="merchant-order-detail"><h3>订单 #{selected.order.id} · {statusText[selected.order.status]}</h3><p>用户 #{selected.order.userId} · 合计 ¥{(selected.order.totalCents / 100).toFixed(2)}</p>{selected.items.map(item => <p key={item.id}>{item.productName} × {item.quantity} · ¥{(item.unitPriceCents * item.quantity / 100).toFixed(2)}</p>)}</div>}
+    {selected && <div className="merchant-order-detail"><h3>订单 #{selected.order.id} · {statusText[selected.order.status]}</h3><p>用户 #{selected.order.userId} · 合计 ¥{(selected.order.totalCents / 100).toFixed(2)}</p>{selected.items.map(item => <p key={item.id}>{item.productName} × {item.quantity} · ¥{(item.unitPriceCents * item.quantity / 100).toFixed(2)}</p>)}<OrderLifecycle key={selected.order.id} order={selected.order} role="MERCHANT" onChanged={order=>{setSelected(current=>current?.order.id===order.id?{...current,order}:current);setOrders(current=>current.map(item=>item.id===order.id?order:item));onInventoryChanged();}}/></div>}
   </section>;
 }

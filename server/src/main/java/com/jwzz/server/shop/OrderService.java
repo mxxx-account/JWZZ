@@ -73,7 +73,7 @@ public class OrderService {
         if (order.status().equals("PENDING_PAYMENT")) {
             if (!LocalDateTime.now().isBefore(order.expiresAt())) closePending(order, "EXPIRED");
             else orders.transition(orderId, "PENDING_PAYMENT", "PAID", "paid_at");
-        } else if (!order.status().equals("PAID") && !order.status().equals("ACCEPTED")) {
+        } else if (order.paidAt() == null) {
             throw conflict("订单已关闭，不能模拟支付");
         }
         return orders.detail(orders.byId(orderId).orElseThrow());
@@ -98,7 +98,7 @@ public class OrderService {
             for (var item : orders.detail(order).items()) orders.consume(item.skuId(), item.quantity(), merchantId);
             orders.transition(orderId, "PAID", "ACCEPTED", "accepted_at");
             outbox.enqueue("order:"+orderId+":accepted",NotificationOutbox.Type.ORDER_ACCEPTED,order.userId(),orderId);
-        } else if (!order.status().equals("ACCEPTED")) throw conflict("只有已模拟支付的订单才能接单");
+        } else if (order.acceptedAt() == null) throw conflict("只有已模拟支付的订单才能接单");
         return orders.detail(orders.byId(orderId).orElseThrow());
     }
 

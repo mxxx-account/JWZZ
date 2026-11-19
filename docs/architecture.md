@@ -24,7 +24,9 @@ flowchart LR
   F -->|用户确认的到期任务 / 事务扫描| O
   A --> C[演示商城、库存与订单]
   A --> SM[订单关联商家消息]
-  I & R & G & M & C & SM --> SQL[(MySQL 8 / Flyway V1-V14)]
+  A --> RF[模拟履约 / 整单退款 / 退货验收]
+  RF -->|订单行锁 / 同事务库存与唯一退款流水| SQL
+  I & R & G & M & C & SM --> SQL[(MySQL 8 / Flyway V1-V15)]
   G & M & C -->|与业务同事务| O[(notification_outbox)]
   O -->|定时扫描 / 行锁跳过已锁记录| W[通知投递 worker]
   W -->|通知写入和事件完成同事务 / 唯一事件 ID 去重| NI[(user_notification)]

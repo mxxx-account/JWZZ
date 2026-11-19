@@ -419,6 +419,14 @@ button:disabled { opacity: .55; cursor: not-allowed; }
 .merchant-order-detail { margin-top: 14px; padding: 16px; border: 1px solid #dce7ed; border-radius: 12px; background: #f7fcfb; }
 .merchant-order-detail h3 { margin: 0 0 10px; }
 .shop-chat-switch { margin: 0 16px 10px; font-size: 13px; }
+.order-lifecycle { margin-top: 24px; border-top: 1px solid #dce7ed; padding-top: 20px; min-width: 0; overflow-wrap: anywhere; }
+.lifecycle-heading, .lifecycle-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.lifecycle-heading h3 { margin: 0; flex: 1; }
+.order-lifecycle form { display: grid; gap: 12px; margin: 20px 0; }
+.order-lifecycle label { display: grid; gap: 8px; }
+.order-lifecycle textarea, .order-lifecycle select { width: 100%; min-width: 0; }
+.shipment-card, .refund-history article { background: #eff8f7; border-radius: 12px; padding: 14px; margin: 12px 0; }
+.refund-history { max-height: 350px; overflow-y: auto; }
 .shop-chat-switch a { color: #0d716e; font-weight: 700; text-decoration: none; }
 .followup-center { max-width: 1280px; margin: 30px auto; padding: 0 24px; }
 .followup-center h1 { font-size: 32px; margin: 8px 0; }
